@@ -450,3 +450,88 @@ OK RNF-09 total JSON (119000.00) == total PDF (119.000,00)
 
 === TODAS LAS PRUEBAS PASARON ===
 Evidencia guardada en: scripts/evidencia/humo-2026-10-30.txt
+=== Prueba de humo Ferretería Ambiente Murano 3D ===
+Fecha: vie 30 oct 2026 22:04:51 -05
+AUTHCORE: http://localhost:8081
+DOMAIN: http://localhost:8085
+
+--- HU-1: Registro ---
+OK HU-1 registro (201)
+OK HU-1 duplicado (409)
+--- HU-2: Login ---
+OK HU-2 login correcto (200, token)
+OK HU-2 clave errónea (401)
+OK HU-2 usuario inexistente (401)
+--- HU-3: Roles ---
+FAIL HU-3 admin login: Variable ADMIN_PASSWORD no definida en el entorno
+=== Prueba de humo Ferretería Ambiente Murano 3D ===
+Fecha: vie 30 oct 2026 22:05:22 -05
+AUTHCORE: http://localhost:8081
+DOMAIN: http://localhost:8085
+
+--- HU-1: Registro ---
+OK HU-1 registro (201)
+OK HU-1 duplicado (409)
+--- HU-2: Login ---
+OK HU-2 login correcto (200, token)
+OK HU-2 clave errónea (401)
+OK HU-2 usuario inexistente (401)
+--- HU-3: Roles ---
+OK HU-3 admin login (200)
+OK HU-3 listar usuarios (200)
+OK HU-3 asignar ADMIN (204)
+OK HU-3 rol ADMIN visible en lista
+OK HU-3 USER asignar rol (403)
+OK HU-3 ID inexistente (404)
+--- HU-4/HU-6: Auth en domain ---
+OK HU-4 sin token (401)
+OK HU-4 token alterado (401)
+OK HU-6 USER GET productos (200)
+OK HU-6 USER POST productos (403)
+--- HU-8: Catálogo ---
+OK HU-8 crear proveedor (201)
+OK HU-8 crear producto (201)
+OK HU-8 código repetido (409)
+OK HU-8 precio negativo (400)
+OK HU-8 búsqueda por código (200)
+OK HU-8 desactivar producto (200)
+OK HU-8 verificado desactivado
+OK HU-8 reactivar producto (200)
+OK HU-8 verificado reactivado
+--- HU-9: Ventas y facturas ---
+OK HU-9 crear producto para venta (201)
+OK HU-9 stock inicial: 10
+OK HU-9 venta exitosa (201, FAC-2026-000008)
+OK HU-9 stock decrementado (8)
+OK HU-9 stock insuficiente (409, stock intacto)
+OK HU-9 PDF factura (%PDF)
+OK HU-9 anular factura (200, ANULADA)
+OK HU-9 stock restaurado (10)
+OK HU-9 anular doble (409)
+OK HU-9 USER anular (403)
+--- HU-10: Compras ---
+OK HU-10 compra registrada (201, CMP-000017)
+OK HU-10 stock incrementado (15)
+OK HU-10 fecha futura (400)
+OK HU-10 USER compra (403)
+--- HU-11: Comparación de precios ---
+OK HU-11 crear segundo proveedor (201)
+OK HU-11 crear producto comparar (201)
+OK HU-11 compra proveedor 1 (201)
+OK HU-11 compra proveedor 2 (201)
+OK HU-11 comparación con dos proveedores (menor marcado)
+OK HU-11 producto sin compras (200, mensaje)
+OK HU-11 producto inexistente (404)
+--- HU-12: Reporte diario ---
+OK HU-12 reporte diario (200)
+OK HU-12 PDF reporte (%PDF)
+OK HU-12 fecha inválida (400)
+OK HU-12 USER reporte (403)
+--- RNF-09: Consistencia JSON/PDF ---
+Total JSON: 119000.00
+Total PDF (colombiano): 119.000,00
+Total PDF (normalizado): 119000.00
+OK RNF-09 total JSON (119000.00) == total PDF (119.000,00)
+
+=== TODAS LAS PRUEBAS PASARON ===
+Evidencia guardada en: scripts/evidencia/humo-2026-10-30.txt

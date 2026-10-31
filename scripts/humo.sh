@@ -5,6 +5,16 @@
 
 set -euo pipefail
 
+# Cargar variables de entorno desde .env (en la raíz del domain/)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_FILE="${SCRIPT_DIR}/../.env"
+if [[ -f "$ENV_FILE" ]]; then
+    set -a
+    # shellcheck disable=SC1090
+    source "$ENV_FILE"
+    set +a
+fi
+
 # Configuración
 AUTHCORE="${AUTHCORE:-http://localhost:8081}"
 DOMAIN="${DOMAIN:-http://localhost:8085}"

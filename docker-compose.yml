@@ -21,7 +21,7 @@ services:
   authcore:
     build:
       context: ../authcore
-      dockerfile: ./docker/authcore.Dockerfile
+      dockerfile: ../domain/docker/authcore.Dockerfile
     ports:
       - "8081:8081"
     environment:
