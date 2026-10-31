@@ -12,3 +12,6 @@ target/
 node_modules/
 dist/
 scripts/evidencia/
+
+# Database backups (scripts/respaldo.sh)
+respaldos/

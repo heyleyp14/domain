@@ -1,0 +1,826 @@
+openapi: 3.0.3
+info:
+  title: Domain Service · Ferretería Ambiente Murano 3D
+  version: 1.0.0
+  description: |
+    Catálogo, ventas, compras, comparación de precios y reporte diario (HU-8 a HU-12).
+
+    Todos los endpoints exigen `Authorization: Bearer <JWT emitido por AuthCore>`. El token se valida
+    localmente con el secreto compartido con AuthCore; este servicio nunca llama a AuthCore.
+
+    Roles: `ADMIN` y `USER` (el vendedor o cajero es un `USER`). Cada operación indica el rol requerido.
+    Orden de validación: permiso (403) → datos faltantes o inválidos (400) → existencia (404) → estado o
+    duplicado (409).
+
+    El dinero se serializa como número JSON con 2 decimales (pesos colombianos, `BigDecimal`, HALF_UP).
+    Escrito a mano a partir de los controladores y DTO de `infrastructure/adapters/in/rest` (RNF-14):
+    actualícelo cuando ellos cambien.
+servers:
+  - url: http://localhost:8085
+    description: Local (directo)
+  - url: http://localhost:8080
+    description: Local a través del proxy del frontend
+security:
+  - bearerAuth: []
+tags:
+  - name: Proveedores
+    description: HU-8
+  - name: Productos
+    description: HU-8 y HU-11
+  - name: Facturas
+    description: HU-9
+  - name: Compras
+    description: HU-10
+  - name: Reportes
+    description: HU-12
+
+paths:
+  /api/proveedores:
+    post:
+      tags: [Proveedores]
+      summary: Registrar un proveedor
+      description: "Rol: ADMIN. El nombre es único sin distinguir mayúsculas ni espacios repetidos; exige teléfono o correo."
+      operationId: registrarProveedor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProveedorPeticion' }
+            example: { nombre: Distribuidora Andina, telefono: "3001234567", correo: null, direccion: 'Calle 10 # 5-20' }
+      responses:
+        '201':
+          description: Proveedor creado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProveedorR' }
+        '400': { $ref: '#/components/responses/DatosInvalidos' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '409': { $ref: '#/components/responses/Conflicto' }
+    get:
+      tags: [Proveedores]
+      summary: Listar o buscar proveedores
+      description: "Rol: cualquier usuario autenticado."
+      operationId: listarProveedores
+      parameters:
+        - name: q
+          in: query
+          required: false
+          description: Texto a buscar en el nombre del proveedor.
+          schema: { type: string }
+      responses:
+        '200':
+          description: Proveedores que coinciden (puede ser vacía)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ProveedorR' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+
+  /api/proveedores/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ProveedorId'
+    get:
+      tags: [Proveedores]
+      summary: Detalle del proveedor con los productos que suministra
+      description: "Rol: cualquier usuario autenticado."
+      operationId: detalleProveedor
+      responses:
+        '200':
+          description: Detalle del proveedor
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProveedorDetalleR' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+    put:
+      tags: [Proveedores]
+      summary: Editar un proveedor
+      description: "Rol: ADMIN."
+      operationId: editarProveedor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProveedorPeticion' }
+      responses:
+        '200':
+          description: Proveedor actualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProveedorR' }
+        '400': { $ref: '#/components/responses/DatosInvalidos' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '409': { $ref: '#/components/responses/Conflicto' }
+
+  /api/productos:
+    post:
+      tags: [Productos]
+      summary: Registrar un producto
+      description: |
+        Rol: ADMIN. Código: 2–20 caracteres (mayúsculas, números o guion; se normaliza a mayúsculas) y
+        único. Nombre: 2–100 caracteres. Precio > 0 con 2 decimales. Stock inicial: entero de 0 a
+        1.000.000. El proveedor debe existir. Si faltan varios datos, el 400 los lista todos.
+      operationId: registrarProducto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProductoNuevo' }
+            example: { codigo: MAR-01, nombre: Martillo de uña 16 oz, precioBase: 25000, aplicaIva: true, stockInicial: 12, proveedorId: 1 }
+      responses:
+        '201':
+          description: Producto creado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductoR' }
+        '400': { $ref: '#/components/responses/DatosInvalidos' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '409': { $ref: '#/components/responses/Conflicto' }
+    get:
+      tags: [Productos]
+      summary: Buscar productos
+      description: |
+        Rol: cualquier usuario autenticado. Busca por código, nombre o nombre del proveedor. Si no hay
+        coincidencias responde 200 con `total: 0` y `mensaje: "No se encontraron productos"`.
+      operationId: buscarProductos
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema: { type: string }
+          description: Texto a comparar con código, nombre o proveedor.
+        - name: soloActivos
+          in: query
+          required: false
+          schema: { type: boolean }
+          description: Solo productos activos.
+        - name: bajoStock
+          in: query
+          required: false
+          schema: { type: boolean }
+          description: Solo productos con 5 unidades o menos.
+      responses:
+        '200':
+          description: Resultado de la búsqueda
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BusquedaProductosR' }
+        '400': { $ref: '#/components/responses/DatosInvalidos' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+
+  /api/productos/{codigo}:
+    parameters:
+      - $ref: '#/components/parameters/CodigoProducto'
+    get:
+      tags: [Productos]
+      summary: Detalle de un producto
+      description: "Rol: cualquier usuario autenticado."
+      operationId: detalleProducto
+      responses:
+        '200':
+          description: Detalle del producto
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductoR' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+    put:
+      tags: [Productos]
+      summary: Editar un producto
+      description: "Rol: ADMIN. Editar nunca cambia el stock: el stock solo cambia por ventas, compras y anulaciones."
+      operationId: editarProducto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProductoEdicion' }
+      responses:
+        '200':
+          description: Producto actualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductoR' }
+        '400': { $ref: '#/components/responses/DatosInvalidos' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '409': { $ref: '#/components/responses/Conflicto' }
+
+  /api/productos/{codigo}/desactivar:
+    parameters:
+      - $ref: '#/components/parameters/CodigoProducto'
+    post:
+      tags: [Productos]
+      summary: Desactivar un producto (RF-09)
+      description: "Rol: ADMIN. El producto conserva su historial, pero ya no se vende ni se compra."
+      operationId: desactivarProducto
+      responses:
+        '200':
+          description: Producto desactivado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductoR' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '409': { $ref: '#/components/responses/Conflicto' }
+
+  /api/productos/{codigo}/activar:
+    parameters:
+      - $ref: '#/components/parameters/CodigoProducto'
+    post:
+      tags: [Productos]
+      summary: Reactivar un producto
+      description: "Rol: ADMIN."
+      operationId: activarProducto
+      responses:
+        '200':
+          description: Producto reactivado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductoR' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '409': { $ref: '#/components/responses/Conflicto' }
+
+  /api/productos/{codigo}/comparacion-precios:
+    parameters:
+      - $ref: '#/components/parameters/CodigoProducto'
+    get:
+      tags: [Productos]
+      summary: Comparar precios de compra entre proveedores (HU-11)
+      description: |
+        Rol: ADMIN. De cada proveedor compara su precio de compra más reciente (oferta vigente) y muestra
+        además su menor precio histórico. Ordena por menor precio vigente; si hay empate, todos los
+        empatados tienen `esMenor: true`. Un producto sin compras responde 200 con `ofertas: []` y un
+        `mensaje`.
+      operationId: compararPrecios
+      responses:
+        '200':
+          description: Comparación de precios
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ComparacionR' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /api/facturas:
+    post:
+      tags: [Facturas]
+      summary: Vender y emitir una factura (HU-9)
+      description: |
+        Rol: cualquier usuario autenticado (queda registrado como vendedor).
+        Todo o nada: factura, descuento de stock y numeración se confirman en una sola transacción.
+        Los códigos repetidos se suman antes de validar el stock. Si faltan existencias de varios
+        productos, el 409 los lista todos en `detalles`. Un producto desactivado no se vende (409).
+        El número es `FAC-AAAA-NNNNNN`, consecutivo por año, sin huecos cuando una venta falla.
+      operationId: emitirFactura
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FacturaPeticion' }
+            example:
+              clienteNombre: Ana Pérez
+              clienteDireccion: 'Av. 0 # 12-34'
+              clienteTelefono: "3009876543"
+              items: [{ codigo: MAR-01, cantidad: 2 }]
+      responses:
+        '201':
+          description: Factura emitida
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FacturaR' }
+        '400': { $ref: '#/components/responses/DatosInvalidos' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '409':
+          description: Stock insuficiente (lista cada producto que falta), producto desactivado o conflicto de concurrencia.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                status: 409
+                error: Conflict
+                mensaje: Stock insuficiente para completar la venta
+                detalles: ["MAR-01 Martillo de uña 16 oz (disponible 1, solicitado 3)"]
+
+  /api/facturas/{numero}:
+    parameters:
+      - $ref: '#/components/parameters/NumeroFactura'
+    get:
+      tags: [Facturas]
+      summary: Detalle de una factura
+      description: "Rol: cualquier usuario autenticado."
+      operationId: consultarFactura
+      responses:
+        '200':
+          description: Factura
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FacturaR' }
+        '400': { $ref: '#/components/responses/DatosInvalidos' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /api/facturas/{numero}/pdf:
+    parameters:
+      - $ref: '#/components/parameters/NumeroFactura'
+    get:
+      tags: [Facturas]
+      summary: PDF de la factura
+      description: |
+        Rol: cualquier usuario autenticado. Se entrega en línea, con nombre de archivo
+        `factura-<numero>.pdf` en `Content-Disposition`. Los valores impresos son los mismos de la
+        factura guardada (RNF-09).
+      operationId: pdfFactura
+      responses:
+        '200':
+          description: Documento PDF
+          headers:
+            Content-Disposition:
+              schema: { type: string, example: 'inline; filename="factura-FAC-2026-000001.pdf"' }
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /api/facturas/{numero}/anulacion:
+    parameters:
+      - $ref: '#/components/parameters/NumeroFactura'
+    post:
+      tags: [Facturas]
+      summary: Anular una factura
+      description: |
+        Rol: ADMIN. Exige un motivo. Devuelve el stock de cada línea exactamente una vez y deja la
+        factura `ANULADA` con quién y cuándo. Anular una factura ya anulada responde 409.
+      operationId: anularFactura
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AnulacionPeticion' }
+            example: { motivo: Error en el cobro }
+      responses:
+        '200':
+          description: Factura anulada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FacturaR' }
+        '400': { $ref: '#/components/responses/DatosInvalidos' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '409': { $ref: '#/components/responses/Conflicto' }
+
+  /api/compras:
+    post:
+      tags: [Compras]
+      summary: Registrar una compra a un proveedor (HU-10)
+      description: |
+        Rol: ADMIN. Todo o nada. La fecha (AAAA-MM-DD) es opcional, por defecto hoy en America/Bogota,
+        y no puede ser futura. Un producto no se repite en la misma compra. Cantidad 1–100.000; precio de
+        compra > 0. El proveedor y los productos deben existir (404) y los productos estar activos (409).
+        Al confirmar, el stock de cada producto aumenta. Código `CMP-NNNNNN`.
+      operationId: registrarCompra
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CompraPeticion' }
+            example:
+              proveedorId: 1
+              fecha: '2026-10-20'
+              items: [{ codigo: MAR-01, cantidad: 5, precioCompra: 18000 }]
+      responses:
+        '201':
+          description: Compra registrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CompraR' }
+        '400': { $ref: '#/components/responses/DatosInvalidos' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '409': { $ref: '#/components/responses/Conflicto' }
+    get:
+      tags: [Compras]
+      summary: Listar compras con filtros opcionales
+      description: "Rol: ADMIN."
+      operationId: listarCompras
+      parameters:
+        - name: proveedorId
+          in: query
+          required: false
+          schema: { type: integer, format: int64 }
+        - name: desde
+          in: query
+          required: false
+          description: Fecha inicial, inclusive (AAAA-MM-DD).
+          schema: { type: string, format: date }
+        - name: hasta
+          in: query
+          required: false
+          description: Fecha final, inclusive (AAAA-MM-DD).
+          schema: { type: string, format: date }
+        - name: producto
+          in: query
+          required: false
+          description: Código de un producto incluido en la compra.
+          schema: { type: string }
+      responses:
+        '200':
+          description: Compras que coinciden (puede ser vacía)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/CompraR' }
+        '400': { $ref: '#/components/responses/DatosInvalidos' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+
+  /api/compras/{codigo}:
+    parameters:
+      - name: codigo
+        in: path
+        required: true
+        description: Código de la compra.
+        schema: { type: string, example: CMP-000001 }
+    get:
+      tags: [Compras]
+      summary: Detalle de una compra
+      description: "Rol: ADMIN."
+      operationId: consultarCompra
+      responses:
+        '200':
+          description: Compra
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CompraR' }
+        '400': { $ref: '#/components/responses/DatosInvalidos' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /api/reportes/ventas-diarias:
+    get:
+      tags: [Reportes]
+      summary: Reporte diario de ventas (HU-12)
+      description: |
+        Rol: ADMIN. El día se calcula en America/Bogota. Las facturas anuladas no suman a los totales,
+        pero se cuentan en `facturasAnuladas` y se marcan en `facturas`. Un día sin ventas responde 200
+        con un reporte vacío y un `mensaje`.
+      operationId: reporteDiario
+      parameters:
+        - $ref: '#/components/parameters/FechaReporte'
+      responses:
+        '200':
+          description: Reporte diario
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReporteDiarioR' }
+        '400': { $ref: '#/components/responses/DatosInvalidos' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+
+  /api/reportes/ventas-diarias/pdf:
+    get:
+      tags: [Reportes]
+      summary: Reporte diario de ventas en PDF
+      description: "Rol: ADMIN. Nombre de archivo `reporte-ventas-<fecha>.pdf`."
+      operationId: reporteDiarioPdf
+      parameters:
+        - $ref: '#/components/parameters/FechaReporte'
+      responses:
+        '200':
+          description: Documento PDF
+          headers:
+            Content-Disposition:
+              schema: { type: string, example: 'inline; filename="reporte-ventas-2026-10-20.pdf"' }
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        '400': { $ref: '#/components/responses/DatosInvalidos' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 'JWT emitido por AuthCore (`POST /api/auth/login`), firmado con HMAC y el secreto compartido. Claims usados: `sub`, `uid`, `roles` y `exp`.'
+
+  parameters:
+    ProveedorId:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer, format: int64 }
+    CodigoProducto:
+      name: codigo
+      in: path
+      required: true
+      description: Código del producto (se normaliza a mayúsculas).
+      schema: { type: string, example: MAR-01 }
+    NumeroFactura:
+      name: numero
+      in: path
+      required: true
+      schema: { type: string, pattern: '^FAC-\d{4}-\d{6}$', example: FAC-2026-000001 }
+    FechaReporte:
+      name: fecha
+      in: query
+      required: true
+      description: Día del reporte, AAAA-MM-DD. Si falta o es inválido responde 400.
+      schema: { type: string, format: date, example: '2026-10-20' }
+
+  responses:
+    DatosInvalidos:
+      description: Datos faltantes o inválidos, o JSON mal formado. Si fallan varios campos, se informan todos.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    NoAutenticado:
+      description: Token ausente, vencido, alterado o firmado con otra clave.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorSeguridad' }
+          example: { status: 401, mensaje: 'No autenticado: falta un token válido' }
+    SinPermiso:
+      description: Token válido, pero el rol no alcanza. Lo produce la regla de la ruta (cuerpo `ErrorSeguridad`) o la política de acceso del dominio (cuerpo `ErrorResponse`).
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/ErrorSeguridad'
+              - $ref: '#/components/schemas/ErrorResponse'
+          example: { status: 403, mensaje: No tiene permiso para esta operación }
+    NoEncontrado:
+      description: El producto, proveedor, factura o compra no existe.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Conflicto:
+      description: Duplicado, estado inválido (ya anulada, producto desactivado) o modificación concurrente.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  schemas:
+    Dinero:
+      type: number
+      description: Valor en pesos colombianos con 2 decimales.
+      example: 25000.00
+
+    ErrorResponse:
+      type: object
+      required: [status, error, mensaje, detalles]
+      properties:
+        status: { type: integer, example: 400 }
+        error: { type: string, example: Bad Request }
+        mensaje: { type: string }
+        detalles:
+          type: array
+          description: Una entrada por elemento (por ejemplo, cada producto sin stock suficiente). Vacía en los demás casos.
+          items: { type: string }
+    ErrorSeguridad:
+      type: object
+      description: Cuerpo que escribe la cadena de filtros de seguridad (401 y 403 de ruta).
+      required: [status, mensaje]
+      properties:
+        status: { type: integer }
+        mensaje: { type: string }
+
+    ProveedorPeticion:
+      type: object
+      properties:
+        nombre: { type: string, minLength: 2 }
+        telefono: { type: string, nullable: true }
+        correo: { type: string, format: email, nullable: true }
+        direccion: { type: string, nullable: true }
+    ProductoNuevo:
+      type: object
+      properties:
+        codigo: { type: string, minLength: 2, maxLength: 20 }
+        nombre: { type: string, minLength: 2, maxLength: 100 }
+        precioBase: { $ref: '#/components/schemas/Dinero' }
+        aplicaIva: { type: boolean }
+        stockInicial: { type: integer, minimum: 0, maximum: 1000000 }
+        proveedorId: { type: integer, format: int64 }
+    ProductoEdicion:
+      type: object
+      properties:
+        nombre: { type: string, minLength: 2, maxLength: 100 }
+        precioBase: { $ref: '#/components/schemas/Dinero' }
+        aplicaIva: { type: boolean }
+        proveedorId: { type: integer, format: int64 }
+    ItemVenta:
+      type: object
+      properties:
+        codigo: { type: string }
+        cantidad: { type: integer, minimum: 1 }
+    FacturaPeticion:
+      type: object
+      properties:
+        clienteNombre: { type: string }
+        clienteDireccion: { type: string, nullable: true }
+        clienteTelefono: { type: string, nullable: true }
+        items:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/ItemVenta' }
+    AnulacionPeticion:
+      type: object
+      properties:
+        motivo: { type: string }
+    ItemCompra:
+      type: object
+      properties:
+        codigo: { type: string }
+        cantidad: { type: integer, minimum: 1, maximum: 100000 }
+        precioCompra: { $ref: '#/components/schemas/Dinero' }
+    CompraPeticion:
+      type: object
+      properties:
+        proveedorId: { type: integer, format: int64 }
+        fecha: { type: string, format: date, nullable: true, description: 'Por defecto, hoy (America/Bogota).' }
+        items:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/ItemCompra' }
+
+    AuditoriaR:
+      type: object
+      properties:
+        creadoPor: { type: string }
+        creadoEn: { type: string, format: date-time }
+        modificadoPor: { type: string, nullable: true }
+        modificadoEn: { type: string, format: date-time, nullable: true }
+    ProveedorR:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        nombre: { type: string }
+        telefono: { type: string, nullable: true }
+        correo: { type: string, nullable: true }
+        direccion: { type: string, nullable: true }
+        auditoria: { $ref: '#/components/schemas/AuditoriaR' }
+    ProductoResumenR:
+      type: object
+      properties:
+        codigo: { type: string }
+        nombre: { type: string }
+        precioBase: { $ref: '#/components/schemas/Dinero' }
+        aplicaIva: { type: boolean }
+        precioFinal: { $ref: '#/components/schemas/Dinero' }
+        stock: { type: integer }
+        stockBajo: { type: boolean, description: Verdadero con 5 unidades o menos. }
+        activo: { type: boolean }
+    ProveedorDetalleR:
+      type: object
+      properties:
+        proveedor: { $ref: '#/components/schemas/ProveedorR' }
+        totalProductos: { type: integer }
+        productos:
+          type: array
+          items: { $ref: '#/components/schemas/ProductoResumenR' }
+    ProductoR:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        codigo: { type: string }
+        nombre: { type: string }
+        precioBase: { $ref: '#/components/schemas/Dinero' }
+        aplicaIva: { type: boolean }
+        precioFinal: { $ref: '#/components/schemas/Dinero' }
+        stock: { type: integer }
+        stockBajo: { type: boolean, description: Verdadero con 5 unidades o menos. }
+        activo: { type: boolean }
+        proveedorId: { type: integer, format: int64 }
+        proveedorNombre: { type: string }
+        auditoria: { $ref: '#/components/schemas/AuditoriaR' }
+    BusquedaProductosR:
+      type: object
+      properties:
+        total: { type: integer }
+        mensaje: { type: string, nullable: true, description: '"No se encontraron productos" cuando la lista está vacía.' }
+        productos:
+          type: array
+          items: { $ref: '#/components/schemas/ProductoR' }
+    LineaFacturaR:
+      type: object
+      properties:
+        codigo: { type: string }
+        nombre: { type: string, description: Nombre congelado al momento de la venta. }
+        cantidad: { type: integer }
+        precioBase: { $ref: '#/components/schemas/Dinero' }
+        aplicaIva: { type: boolean }
+        subtotal: { $ref: '#/components/schemas/Dinero' }
+        iva: { $ref: '#/components/schemas/Dinero' }
+        total: { $ref: '#/components/schemas/Dinero' }
+    FacturaR:
+      type: object
+      properties:
+        numero: { type: string, example: FAC-2026-000001 }
+        fecha: { type: string, format: date-time }
+        estado: { type: string, enum: [EMITIDA, ANULADA] }
+        clienteNombre: { type: string }
+        clienteDireccion: { type: string, nullable: true }
+        clienteTelefono: { type: string, nullable: true }
+        vendedor: { type: string, description: 'Claim `sub` del token que emitió la factura.' }
+        lineas:
+          type: array
+          items: { $ref: '#/components/schemas/LineaFacturaR' }
+        subtotal: { $ref: '#/components/schemas/Dinero' }
+        iva: { $ref: '#/components/schemas/Dinero' }
+        total: { $ref: '#/components/schemas/Dinero' }
+        anuladaPor: { type: string, nullable: true }
+        anuladaEn: { type: string, format: date-time, nullable: true }
+        motivoAnulacion: { type: string, nullable: true }
+    LineaCompraR:
+      type: object
+      properties:
+        codigo: { type: string }
+        nombre: { type: string }
+        cantidad: { type: integer }
+        precioUnitario: { $ref: '#/components/schemas/Dinero' }
+        total: { $ref: '#/components/schemas/Dinero' }
+    CompraR:
+      type: object
+      properties:
+        codigo: { type: string, example: CMP-000001 }
+        proveedorId: { type: integer, format: int64 }
+        proveedorNombre: { type: string }
+        fecha: { type: string, format: date }
+        registradaPor: { type: string }
+        registradaEn: { type: string, format: date-time }
+        lineas:
+          type: array
+          items: { $ref: '#/components/schemas/LineaCompraR' }
+        total: { $ref: '#/components/schemas/Dinero' }
+    OfertaR:
+      type: object
+      properties:
+        proveedorId: { type: integer, format: int64 }
+        proveedorNombre: { type: string }
+        ultimoPrecio: { $ref: '#/components/schemas/Dinero' }
+        fechaUltimaCompra: { type: string, format: date }
+        menorPrecioHistorico: { $ref: '#/components/schemas/Dinero' }
+        compras: { type: integer, description: Número de compras a este proveedor. }
+        esMenor: { type: boolean, description: Verdadero para cada proveedor empatado en el menor precio vigente. }
+    ComparacionR:
+      type: object
+      properties:
+        codigoProducto: { type: string }
+        nombreProducto: { type: string }
+        mensaje: { type: string, nullable: true, description: '"Este producto aún no tiene compras registradas" cuando no hay ofertas.' }
+        ofertas:
+          type: array
+          items: { $ref: '#/components/schemas/OfertaR' }
+    LineaReporteR:
+      type: object
+      properties:
+        codigo: { type: string }
+        nombre: { type: string }
+        cantidad: { type: integer }
+        subtotal: { $ref: '#/components/schemas/Dinero' }
+        iva: { $ref: '#/components/schemas/Dinero' }
+        total: { $ref: '#/components/schemas/Dinero' }
+    ResumenFacturaR:
+      type: object
+      properties:
+        numero: { type: string }
+        fecha: { type: string, format: date-time }
+        cliente: { type: string }
+        vendedor: { type: string }
+        total: { $ref: '#/components/schemas/Dinero' }
+        anulada: { type: boolean }
+    ReporteDiarioR:
+      type: object
+      properties:
+        fecha: { type: string, format: date }
+        mensaje: { type: string, nullable: true, description: '"No se registraron ventas en esta fecha" en un día sin ventas.' }
+        facturasEmitidas: { type: integer }
+        facturasAnuladas: { type: integer }
+        unidadesVendidas: { type: integer }
+        subtotal: { $ref: '#/components/schemas/Dinero' }
+        iva: { $ref: '#/components/schemas/Dinero' }
+        total: { $ref: '#/components/schemas/Dinero' }
+        productos:
+          type: array
+          items: { $ref: '#/components/schemas/LineaReporteR' }
+        facturas:
+          type: array
+          items: { $ref: '#/components/schemas/ResumenFacturaR' }

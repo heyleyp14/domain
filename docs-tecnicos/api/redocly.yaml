@@ -1,0 +1,8 @@
+# Lint config for the hand-written specs: `npx @redocly/cli lint` from this folder.
+extends:
+  - recommended
+rules:
+  # The documented servers are local on purpose; there is no public deployment yet.
+  no-server-example.com: off
+  # Academic project without a license decision.
+  info-license: off

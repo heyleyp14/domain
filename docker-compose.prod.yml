@@ -1,0 +1,57 @@
+# Production overlay for a small server (about 1 GB of RAM plus swap, e.g. an AWS free-tier instance).
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# Differences from docker-compose.yml:
+# - Only the frontend publishes a port (80). AuthCore, the domain service and both databases stay on
+#   the internal network; the browser reaches the APIs through the nginx proxy.
+# - Every service restarts on failure and after a reboot.
+# - Memory limits sized for a 1 GB machine. The JVMs size their heap from the container limit.
+# - Logs are rotated so they cannot fill the disk.
+
+x-logs: &logs
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+# Small-footprint JVM settings: heap from the container limit, serial GC, capped metaspace and JIT cache.
+x-jvm: &jvm "-XX:MaxRAMPercentage=55 -XX:+UseSerialGC -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=48m -XX:TieredStopAtLevel=1 -Xss512k"
+
+services:
+  authcore-db:
+    <<: *logs
+    restart: unless-stopped
+    mem_limit: 320m
+    # Small InnoDB buffer and no performance schema: enough for the users table, far less memory.
+    command: ["--innodb-buffer-pool-size=64M", "--performance-schema=OFF", "--max-connections=40"]
+
+  authcore:
+    <<: *logs
+    restart: unless-stopped
+    mem_limit: 384m
+    ports: !reset []
+    environment:
+      JAVA_TOOL_OPTIONS: *jvm
+
+  domain-db:
+    <<: *logs
+    restart: unless-stopped
+    mem_limit: 192m
+    command: ["postgres", "-c", "shared_buffers=32MB", "-c", "max_connections=40"]
+
+  domain:
+    <<: *logs
+    restart: unless-stopped
+    mem_limit: 416m
+    ports: !reset []
+    environment:
+      JAVA_TOOL_OPTIONS: *jvm
+
+  frontend:
+    <<: *logs
+    restart: unless-stopped
+    mem_limit: 64m
+    ports: !override
+      - "80:80"

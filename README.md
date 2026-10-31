@@ -63,6 +63,28 @@ docker compose up -d --build
 ./scripts/humo.sh --evidencia  # genera archivo de evidencia
 ```
 
+## Calidad y operación (fase 4)
+
+| Script o documento | Para qué |
+|---|---|
+| `scripts/verificar-authcore.sh` | Criterios de AuthCore que exigen mirar su base y sus logs (BCrypt, sal, contraseña fuera de los logs). Informa las brechas D2 sin fallar |
+| `scripts/respaldo.sh` / `scripts/restaurar.sh` | Respaldo y restauración de las dos bases (RNF-12). Ver `docs-tecnicos/plan-respaldo.md` |
+| `scripts/rendimiento.sh` | Mide la búsqueda con 5.000 productos (RNF-07). **Solo contra una instancia de prueba**. Ver `docs-tecnicos/rendimiento.md` |
+| `scripts/verificar-openapi.py` | Comprueba que las rutas de los controladores y de la especificación OpenAPI coinciden |
+| `docs-tecnicos/api/` | Especificación OpenAPI del domain service y de AuthCore (RNF-14) |
+| `docs-tecnicos/matriz-pruebas.md` | Cada criterio de aceptación y la prueba que lo cubre (RNF-13) |
+
+## Producción (fase 5)
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+./scripts/cambiar-clave-admin.sh      # OBLIGATORIO: reemplaza la clave fija del admin de AuthCore
+```
+
+`docker-compose.prod.yml` publica solo el puerto 80 (frontend con proxy), reinicia los servicios
+automáticamente, limita la memoria (unos 710 MB en total) y rota los logs. La guía paso a paso para
+AWS está en `docs-tecnicos/despliegue-aws.md`.
+
 ## Estructura
 - `src/main/java/...` - Código fuente (arquitectura hexagonal)
 - `src/test/` - Pruebas (dominio, aplicación, contrato JPA, REST, concurrencia)
