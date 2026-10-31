@@ -1,7 +1,7 @@
 # Matriz de pruebas (RNF-13)
 
 Cada fila es un criterio de aceptación del backlog refinado (`docs/1.1_PB_Inicial_authcore_Ferreteria_Grupo1.xlsx`),
-copiado **textual**, con la prueba que lo demuestra. Total: **61 criterios** · Cubierto: 53 · NO CUMPLE (D2): 3 · Parcial: 2 · Revisión manual: 2 · Interfaz pendiente: 1.
+copiado **textual**, con la prueba que lo demuestra. Total: **61 criterios** · Cubierto: 54 · NO CUMPLE (D2): 3 · Parcial: 2 · Revisión manual: 2.
 
 ## Última ejecución (30/10/2026)
 
@@ -12,7 +12,7 @@ copiado **textual**, con la prueba que lo demuestra. Total: **61 criterios** · 
 | Criterios de AuthCore que requieren mirar la base y los logs | `./scripts/verificar-authcore.sh` | 9 OK, 0 fallas, 5 brechas D2 |
 | Rendimiento de búsqueda (RNF-07) | `./scripts/rendimiento.sh` | Percentil 95: 0,065 s con 5.000 productos |
 | Rutas documentadas (RNF-14) | `python3 -I scripts/verificar-openapi.py` | 20 de 20 |
-| Interfaz (frontend) | `cd frontend && npm test` | **Pendiente**: fase 3 en curso (T3.2 a T3.9) |
+| Interfaz (frontend): sesión, roles y las 9 pantallas | `cd frontend && npm test` | 82 pruebas, 0 fallas (31/10/2026) |
 
 ## Estados
 
@@ -21,11 +21,10 @@ copiado **textual**, con la prueba que lo demuestra. Total: **61 criterios** · 
 | **Cubierto** | Una prueba automatizada falla si el criterio deja de cumplirse |
 | **Parcial** | Cubierto en un servicio o en parte del criterio; la nota dice qué falta |
 | **Revisión manual** | Verificado leyendo el código o la configuración; no hay prueba automatizada |
-| **Interfaz pendiente** | El servidor cumple; falta la pantalla que lo muestre (fase 3) |
 | **NO CUMPLE (D2)** | AuthCore no lo cumple; no se corrige porque es código del profesor (ver `pendientes-del-equipo.md`, D2). Lo detecta `verificar-authcore.sh` |
 
 Nombres de prueba: `Clase.metodo` en `src/test/java/...`; los pasos de los scripts aparecen entre « ».
-Cuando se cierre la fase 3, hay que agregar la columna de pruebas de interfaz (Vitest) a las filas que dicen «Interfaz: T3.x».
+Las pruebas de interfaz (Vitest) están en `frontend/src/**/*.test.tsx`: una por pantalla, con el mismo número de tarea (T3.x) que citan las notas.
 
 ## Criterios
 
@@ -100,7 +99,7 @@ Cuando se cierre la fase 3, hay que agregar la columna de pruebas de interfaz (V
 | 5 | El sistema permite registrar un proveedor con nombre, datos de contacto y productos que suministra. | domain (JUnit): CatalogoServiceTest.registraProveedor, proveedorConSusProductos; humo.sh: «HU-8 crear proveedor» | **Cubierto** |  |
 | 6 | Un producto solo puede asociarse a un proveedor que exista en el sistema. | domain (JUnit): CatalogoServiceTest.proveedorExistenteYDatosObligatorios | **Cubierto** |  |
 | 7 | La búsqueda por código o por nombre retorna los productos coincidentes y muestra precio unitario, IVA y stock disponible de cada uno. | domain (JUnit): CatalogoServiceTest.busca, ProductoRepositoryContractTest.listaPorNombreYFiltraPorTextoCodigoOProveedor (en memoria y JPA); humo.sh: «HU-8 búsqueda por código» | **Cubierto** | Mostrarlo en pantalla: T3.3. |
-| 8 | Si no hay coincidencias, el sistema muestra un mensaje indicando que no se encontraron productos. | domain (JUnit): FerreteriaRestTest.busquedaSinResultados | **Interfaz pendiente** | El servidor responde 200 con «No se encontraron productos». Falta mostrarlo: T3.3. |
+| 8 | Si no hay coincidencias, el sistema muestra un mensaje indicando que no se encontraron productos. | domain (JUnit): FerreteriaRestTest.busquedaSinResultados; frontend: Productos.test.tsx «sin coincidencias muestra "No se encontraron productos"» | **Cubierto** | |
 | 9 | Técnico: el código lleva 2–20 caracteres (mayúsculas, números o guion) y es único (409); nombre de 2 a 100 caracteres; precio mayor que cero con 2 decimales; IVA del 19 % (sí/no) calculado con decimales exactos para mostrar el precio final; stock entero entre 0 y 1.000.000. Si faltan varios datos, el error los lista todos (400). | domain (JUnit): ProductoTest.validaTextos, rechazaNumerosInvalidos, precioFinal; DineroEIvaTest; CatalogoServiceTest.proveedorExistenteYDatosObligatorios; FerreteriaRestTest.datosInvalidos | **Cubierto** |  |
 | 10 | Técnico: el nombre del proveedor es único sin distinguir mayúsculas ni espacios repetidos (409) y debe tener teléfono o correo (400). Editar un producto o proveedor no cambia el stock: el stock solo cambia por ventas, compras y anulaciones. Un producto se puede desactivar y reactivar (conserva su historial, pero no se vende ni se compra). | domain (JUnit): CatalogoServiceTest.nombreDeProveedorUnico, proveedorSinContacto; ProveedorTest.normalizaNombre, exigeContacto; ProductoTest.editar, desactivarYActivar; CatalogoServiceTest.desactivaYActiva; FerreteriaRestTest.productoDesactivado; humo.sh: «HU-8 desactivar producto», «HU-8 reactivar producto» | **Cubierto** |  |
 | 11 | Técnico: la búsqueda admite texto (código, nombre o proveedor), solo activos y solo stock bajo (5 unidades o menos, marcado en el resultado). Registrar, editar, desactivar y reactivar son solo del rol ADMIN (403 para los demás); buscar y consultar son de cualquier usuario autenticado; un producto o proveedor inexistente responde 404. | domain (JUnit): ProductoRepositoryContractTest.filtraPorActivosYStockBajo, ProductoTest.stockBajo, FerreteriaRestTest.usuarioNormalNoAdministra; humo.sh: «HU-6 USER POST productos» | **Cubierto** |  |
