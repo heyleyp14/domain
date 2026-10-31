@@ -84,8 +84,8 @@ export interface ItemVentaRequest {
 
 export interface FacturaRequest {
   clienteNombre: string
-  clienteDireccion: string
-  clienteTelefono: string
+  clienteDireccion: string | null
+  clienteTelefono: string | null
   items: ItemVentaRequest[]
 }
 
@@ -103,10 +103,10 @@ export interface LineaFacturaResponse {
 export interface FacturaResponse {
   numero: string
   fecha: string // ISO 8601
-  estado: string // 'EMITIDA' | 'ANULADA'
+  estado: 'EMITIDA' | 'ANULADA'
   clienteNombre: string
-  clienteDireccion: string
-  clienteTelefono: string
+  clienteDireccion: string | null
+  clienteTelefono: string | null
   vendedor: string
   lineas: LineaFacturaResponse[]
   subtotal: Dinero

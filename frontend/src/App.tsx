@@ -6,6 +6,7 @@ import { Login } from './pages/Login'
 import { Dashboard } from './pages/Dashboard'
 import { Productos } from './pages/Productos'
 import { Proveedores } from './pages/Proveedores'
+import { PuntoVenta } from './pages/PuntoVenta'
 import './index.css'
 
 /** Any authenticated user (USER or ADMIN). */
@@ -24,7 +25,7 @@ export function AppRoutes() {
       <Route path="/login" element={<Login />} />
       <Route element={<ProtectedLayout />}>
         <Route path="/" element={<Dashboard />} />
-        <Route path="/vender" element={<div>Vender - En desarrollo</div>} />
+        <Route path="/vender" element={<PuntoVenta />} />
         <Route path="/productos" element={<Productos />} />
         <Route path="/proveedores" element={<Proveedores />} />
         <Route path="/facturas" element={<div>Facturas - En desarrollo</div>} />

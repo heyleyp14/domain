@@ -117,6 +117,32 @@ export const ETIQUETAS_PROVEEDOR: Record<string, CampoProveedor> = {
   'dirección': 'direccion',
 }
 
+export type CampoCliente = 'clienteNombre' | 'clienteDireccion' | 'clienteTelefono'
+
+export interface FormCliente {
+  clienteNombre: string
+  clienteDireccion: string
+  clienteTelefono: string
+}
+
+/** Customer data of an invoice (Factura.java): name 2-100, optional address up to 150 and optional phone. */
+export function validarCliente(f: FormCliente): ErroresCampo<CampoCliente> {
+  const e: ErroresCampo<CampoCliente> = {}
+  const nombre = f.clienteNombre.trim()
+  if (!nombre) e.clienteNombre = 'El nombre del cliente es obligatorio'
+  else if (nombre.length < 2 || nombre.length > 100) e.clienteNombre = 'El nombre debe tener entre 2 y 100 caracteres'
+  if (f.clienteDireccion.trim().length > 150) e.clienteDireccion = 'La dirección no puede superar 150 caracteres'
+  const telefono = f.clienteTelefono.trim()
+  if (telefono && !TELEFONO.test(telefono)) e.clienteTelefono = 'Use de 7 a 20 caracteres (dígitos, +, paréntesis, guion o espacio)'
+  return e
+}
+
+export const ETIQUETAS_VENTA: Record<string, CampoCliente> = {
+  'nombre del cliente': 'clienteNombre',
+  'dirección del cliente': 'clienteDireccion',
+  'teléfono': 'clienteTelefono',
+}
+
 export function hayErrores(e: Record<string, string | undefined>): boolean {
   return Object.values(e).some(Boolean)
 }

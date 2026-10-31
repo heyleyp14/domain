@@ -385,3 +385,17 @@ tr.inactivo td { color: #7f8c8d; }
 .aviso { background: #eafaf1; border: 1px solid #a9dfbf; color: #1e8449; padding: 0.6rem 1rem; border-radius: 6px; }
 .sin-resultados { color: #5d6d7e; font-style: italic; }
 .confirmacion { border-left: 4px solid #c0392b; }
+
+/* ===== Point of sale (T3.4) ===== */
+.buscador { position: relative; display: flex; flex-direction: column; gap: 0.25rem; max-width: 40rem; }
+.buscador input { padding: 0.75rem; font-size: 1.1rem; }
+.sugerencias { position: absolute; top: 100%; left: 0; right: 0; z-index: 10; margin: 0; padding: 0; list-style: none;
+  background: #fff; border: 1px solid #ccd1d1; border-radius: 6px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12); max-height: 22rem; overflow-y: auto; }
+.sugerencias li { padding: 0.6rem 0.75rem; cursor: pointer; }
+.sugerencias li.activa { background: #eaf2f8; }
+.sugerencias li[aria-disabled="true"] { color: #95a5a6; cursor: not-allowed; }
+.punto-venta input[type="number"] { width: 6rem; padding: 0.4rem; font-size: 1rem; }
+.total-estimado { font-size: 1.15rem; margin-top: 0.75rem; }
+.btn-grande { font-size: 1.15rem; padding: 0.85rem 1.75rem; margin-top: 1rem; }
+.totales { display: grid; grid-template-columns: max-content max-content; gap: 0.25rem 1.5rem; justify-content: end; font-size: 1.05rem; }
+.totales dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
