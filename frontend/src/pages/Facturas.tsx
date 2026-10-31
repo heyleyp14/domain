@@ -1,225 +1,137 @@
-import { useEffect, useState } from 'react'
-import { useAuth } from '../auth/useAuth'
-import { listarFacturas, obtenerFacturaDetalle, anularFacturaAdmin, pdfFacturaDetalle } from '../api/facturas'
+import { useEffect, useState, type FormEvent } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { ApiError } from '../api/client'
 import type { FacturaResponse } from '../api/domain'
-import { formatearPesos } from '../lib/formato'
+import { anularFactura, obtenerFactura } from '../api/ventas'
+import { useAuth } from '../auth/useAuth'
+import { FacturaDetalle } from '../components/FacturaDetalle'
+import { Input, MensajeError, Textarea } from '../components/FormFields'
 
-const FECHA = new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Bogota' })
+const NUMERO = /^FAC-\d{4}-\d{6}$/
 
-export function Facturas() {
-  const { hasRole } = useAuth()
-  const isAdmin = hasRole('ADMIN')
+/** Cancellation form (ADMIN): the reason is mandatory, 5 to 300 characters (Factura.java). */
+function Anulacion({ factura, onAnulada, onCancelar }: {
+  factura: FacturaResponse
+  onAnulada: (f: FacturaResponse) => void
+  onCancelar: () => void
+}) {
+  const [motivo, setMotivo] = useState('')
+  const [errorMotivo, setErrorMotivo] = useState<string | undefined>()
+  const [error, setError] = useState<string | null>(null)
+  const [enviando, setEnviando] = useState(false)
 
-  const [fecha, setFecha] = useState('')
-  const [respuesta, setRespuesta] = useState<{ f?: FacturaResponse[]; error?: string } | null>(null)
-
-  // Detail sidebar
-  const [facturaSeleccionada, setFacturaSeleccionada] = useState<FacturaResponse | null>(null)
-  const [cargandoDetalle, setCargandoDetalle] = useState(false)
-  const [errorDetalle, setErrorDetalle] = useState<string | null>(null)
-
-  useEffect(() => {
-    let vigente = true
-    listarFacturas(fecha || undefined)
-      .then(f => {
-        if (!vigente) return
-        setRespuesta({ f })
-      })
-      .catch(err => {
-        if (!vigente) return
-        setRespuesta({ error: err instanceof Error ? err.message : 'No se pudo cargar la lista de facturas' })
-      })
-    return () => { vigente = false }
-  }, [fecha])
-
-  const facturas = respuesta?.f ?? []
-  const error = respuesta?.error ?? null
-  const cargando = fecha !== '' && !respuesta
-
-  const verDetalle = async (numero: string) => {
-    setCargandoDetalle(true)
-    setErrorDetalle(null)
+  const enviar = async (e: FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    const texto = motivo.trim()
+    if (texto.length < 5 || texto.length > 300) {
+      setErrorMotivo('Escriba el motivo, entre 5 y 300 caracteres')
+      return
+    }
+    setEnviando(true)
     try {
-      const detalle = await obtenerFacturaDetalle(numero)
-      setFacturaSeleccionada(detalle)
+      onAnulada(await anularFactura(factura.numero, texto))
     } catch (err) {
-      setErrorDetalle(err instanceof Error ? err.message : 'No se pudo cargar el detalle')
+      if (err instanceof ApiError && err.status === 400 && /motivo/i.test(err.message)) setErrorMotivo(err.message)
+      else setError(err instanceof Error ? err.message : 'No se pudo anular la factura')
     } finally {
-      setCargandoDetalle(false)
-    }
-  }
-
-  const cerrarDetalle = () => setFacturaSeleccionada(null)
-
-  const handleAnular = async (numero: string) => {
-    const motivo = window.prompt('Motivo de la anulación (requerido):')
-    if (!motivo?.trim()) return
-    try {
-      await anularFacturaAdmin(numero, motivo.trim())
-      window.location.reload()
-    } catch (err) {
-      setErrorDetalle(err instanceof Error ? err.message : 'No se pudo anular la factura')
-    }
-  }
-
-  const handleDescargar = async (numero: string) => {
-    try {
-      const { archivo, nombre } = await pdfFacturaDetalle(numero)
-      const url = URL.createObjectURL(archivo)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = nombre
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
-      setTimeout(() => URL.revokeObjectURL(url), 1000)
-    } catch (err) {
-      setErrorDetalle(err instanceof Error ? err.message : 'No se pudo descargar el PDF')
+      setEnviando(false)
     }
   }
 
   return (
-    <div className="facturas">
-      <div className="page-header">
-        <h1>Facturas</h1>
+    <form className="card confirmacion" onSubmit={enviar} noValidate aria-label={`Anular ${factura.numero}`}>
+      <h3>¿Anular la factura {factura.numero}?</h3>
+      <p>
+        La factura queda ANULADA, el stock de cada producto vuelve al inventario y deja de sumar en el reporte
+        diario. Esta acción no se puede deshacer.
+      </p>
+      <Textarea label="Motivo de la anulación" value={motivo} error={errorMotivo} rows={3} maxLength={300} autoFocus
+        onChange={e => { setMotivo(e.target.value); setErrorMotivo(undefined) }} />
+      <MensajeError mensaje={error} />
+      <div className="acciones">
+        <button type="submit" className="btn btn-danger" disabled={enviando}>{enviando ? 'Anulando...' : 'Anular factura'}</button>
+        <button type="button" className="btn btn-secondary" onClick={onCancelar} disabled={enviando}>Cancelar</button>
       </div>
+    </form>
+  )
+}
 
-      <section className="search-filters card">
-        <div className="search-row">
-          <input
-            type="date"
-            value={fecha}
-            onChange={e => setFecha(e.target.value)}
-            className="form-input"
-            aria-label="Filtrar por fecha"
-          />
-        </div>
-        {cargando && <div className="loading">Cargando…</div>}
-      </section>
+/**
+ * Invoices (HU-9): look up an invoice by its number, see it, download its PDF and, for ADMIN, cancel it.
+ * The server has no invoice list; the daily report (T3.8) lists the invoices of a day and links here.
+ * The number travels in the URL (?numero=FAC-...), so a link opens the invoice directly.
+ */
+export function Facturas() {
+  const { hasRole } = useAuth()
+  const esAdmin = hasRole('ADMIN')
+  const [params, setParams] = useSearchParams()
+  const numero = (params.get('numero') ?? '').trim().toUpperCase()
 
-      <section className="results card">
-        {error && <div className="error" role="alert">{error}</div>}
+  const [texto, setTexto] = useState(numero)
+  const [errorNumero, setErrorNumero] = useState<string | undefined>()
+  const [respuesta, setRespuesta] = useState<{ numero: string; factura?: FacturaResponse; error?: string } | null>(null)
+  const [anulando, setAnulando] = useState(false)
+  const [aviso, setAviso] = useState<string | null>(null)
 
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Número</th>
-                <th>Fecha</th>
-                <th>Cliente</th>
-                <th>Vendedor</th>
-                <th>Estado</th>
-                <th>Total</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {facturas.map(f => (
-                <tr key={f.numero} onClick={() => verDetalle(f.numero)} style={{ cursor: 'pointer' }}>
-                  <td>{f.numero}</td>
-                  <td>{FECHA.format(new Date(f.fecha))}</td>
-                  <td>{f.clienteNombre}</td>
-                  <td>{f.vendedor}</td>
-                  <td className="center">
-                    {f.estado === 'ANULADA'
-                      ? <span className="badge badge-danger">Anulada</span>
-                      : <span className="badge badge-success">Emitida</span>}
-                  </td>
-                  <td className="precio">{formatearPesos(f.total)}</td>
-                  <td className="acciones">
-                    {isAdmin && f.estado === 'EMITIDA' && (
-                      <button
-                        className="btn-link"
-                        onClick={e => { e.stopPropagation(); handleAnular(f.numero); }}
-                        title="Anular"
-                      >
-                        ⛔
-                      </button>
-                    )}
-                    <button
-                      className="btn-link"
-                      onClick={e => { e.stopPropagation(); handleDescargar(f.numero); }}
-                      title="Descargar PDF"
-                    >
-                      📄
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {facturas.length === 0 && !cargando && !error && (
-                <tr><td colSpan={7} className="sin-datos">No hay facturas</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-        {facturas.length > 0 && <p className="total-resultados">{facturas.length} factura{facturas.length !== 1 ? 's' : ''} encontrada{facturas.length !== 1 ? 's' : ''}</p>}
-      </section>
+  useEffect(() => {
+    if (!numero) return
+    let vigente = true
+    obtenerFactura(numero)
+      .then(factura => vigente && setRespuesta({ numero, factura }))
+      .catch(e => vigente && setRespuesta({ numero, error: e instanceof Error ? e.message : 'No se pudo consultar la factura' }))
+    return () => {
+      vigente = false
+    }
+  }, [numero])
 
-      {/* Detail sidebar */}
-      {facturaSeleccionada && (
-        <aside className="sidebar card" role="dialog" aria-label={`Detalle de factura ${facturaSeleccionada.numero}`}>
-          <header className="sidebar-header">
-            <h2>Factura {facturaSeleccionada.numero}</h2>
-            <button className="btn-close" onClick={cerrarDetalle} aria-label="Cerrar">✕</button>
-          </header>
-          <div className="sidebar-body">
-            {cargandoDetalle && <div className="loading">Cargando detalle…</div>}
-            {errorDetalle && <div className="error" role="alert">{errorDetalle}</div>}
-            {!cargandoDetalle && !errorDetalle && (
-              <>
-                <p>
-                  {FECHA.format(new Date(facturaSeleccionada.fecha))} · Vendedor: {facturaSeleccionada.vendedor}
-                  <br />
-                  Cliente: {facturaSeleccionada.clienteNombre}
-                  {facturaSeleccionada.clienteDireccion && ` · ${facturaSeleccionada.clienteDireccion}`}
-                  {facturaSeleccionada.clienteTelefono && ` · Tel. ${facturaSeleccionada.clienteTelefono}`}
-                </p>
-                {facturaSeleccionada.estado === 'ANULADA' && (
-                  <p className="mensaje-error">
-                    Anulada por {facturaSeleccionada.anuladaPor}
-                    {facturaSeleccionada.anuladaEn && ` el ${FECHA.format(new Date(facturaSeleccionada.anuladaEn))}`}
-                    . Motivo: {facturaSeleccionada.motivoAnulacion}
-                  </p>
-                )}
-                <h3>Productos</h3>
-                <div className="table-container">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Código</th>
-                        <th>Nombre</th>
-                        <th>Cantidad</th>
-                        <th>Precio base</th>
-                        <th>Subtotal</th>
-                        <th>IVA</th>
-                        <th>Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {facturaSeleccionada.lineas.map(l => (
-                        <tr key={l.codigo}>
-                          <td>{l.codigo}</td>
-                          <td>{l.nombre}</td>
-                          <td className="numero">{l.cantidad}</td>
-                          <td className="precio">{formatearPesos(l.precioBase)}</td>
-                          <td className="precio">{formatearPesos(l.subtotal)}</td>
-                          <td className="precio">{formatearPesos(l.iva)}</td>
-                          <td className="precio">{formatearPesos(l.total)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <dl className="totales">
-                  <dt>Subtotal</dt><dd>{formatearPesos(facturaSeleccionada.subtotal)}</dd>
-                  <dt>IVA</dt><dd>{formatearPesos(facturaSeleccionada.iva)}</dd>
-                  <dt>Total</dt><dd><strong>{formatearPesos(facturaSeleccionada.total)}</strong></dd>
-                </dl>
-              </>
-            )}
-          </div>
-        </aside>
+  const actual = numero && respuesta?.numero === numero ? respuesta : null
+  const cargando = Boolean(numero) && !actual
+
+  const buscar = (e: FormEvent) => {
+    e.preventDefault()
+    const n = texto.trim().toUpperCase()
+    if (!NUMERO.test(n)) {
+      setErrorNumero('Escriba el número completo, por ejemplo FAC-2026-000001')
+      return
+    }
+    setAviso(null)
+    setAnulando(false)
+    setParams({ numero: n })
+  }
+
+  const alAnular = (f: FacturaResponse) => {
+    setRespuesta({ numero: f.numero, factura: f })
+    setAnulando(false)
+    setAviso(`Factura ${f.numero} anulada; el stock de sus productos volvió al inventario.`)
+  }
+
+  const factura = actual?.factura
+  return (
+    <section className="pagina">
+      <h1>Facturas</h1>
+      <form className="filtros" role="search" onSubmit={buscar} noValidate>
+        <Input label="Número de factura" value={texto} error={errorNumero} placeholder="FAC-2026-000001" autoFocus
+          onChange={e => { setTexto(e.target.value.toUpperCase()); setErrorNumero(undefined) }} />
+        <button type="submit" className="btn btn-primary">Buscar</button>
+      </form>
+
+      {aviso && <p className="aviso" role="status">{aviso}</p>}
+      {cargando && <p className="loading">Buscando...</p>}
+      <MensajeError mensaje={actual?.error ?? null} />
+      {!numero && <p className="ayuda-campo">Las facturas de un día aparecen en el reporte diario.</p>}
+
+      {factura && (
+        <FacturaDetalle
+          factura={factura}
+          acciones={esAdmin && factura.estado === 'EMITIDA' && !anulando && (
+            <button type="button" className="btn btn-danger" onClick={() => { setAviso(null); setAnulando(true) }}>
+              Anular factura
+            </button>
+          )}
+        />
       )}
-    </div>
+      {factura && anulando && <Anulacion factura={factura} onAnulada={alAnular} onCancelar={() => setAnulando(false)} />}
+    </section>
   )
 }
