@@ -5,6 +5,7 @@ import co.edu.unipamplona.ferreteria.application.port.out.DatosNegocio;
 import co.edu.unipamplona.ferreteria.application.port.out.FacturaRepositoryPort;
 import co.edu.unipamplona.ferreteria.application.port.out.GeneradorPdfPort;
 import co.edu.unipamplona.ferreteria.application.port.out.NumeracionFacturaPort;
+import co.edu.unipamplona.ferreteria.application.port.out.DataCleanupPort;
 import co.edu.unipamplona.ferreteria.application.port.out.ProductoRepositoryPort;
 import co.edu.unipamplona.ferreteria.application.port.out.ProveedorRepositoryPort;
 import co.edu.unipamplona.ferreteria.application.port.out.TransaccionPort;
@@ -12,6 +13,7 @@ import co.edu.unipamplona.ferreteria.application.service.CatalogoService;
 import co.edu.unipamplona.ferreteria.application.service.ComparacionPreciosService;
 import co.edu.unipamplona.ferreteria.application.service.CompraService;
 import co.edu.unipamplona.ferreteria.application.service.ReporteVentasService;
+import co.edu.unipamplona.ferreteria.application.port.in.SeedUseCase;
 import co.edu.unipamplona.ferreteria.application.service.SeedService;
 import co.edu.unipamplona.ferreteria.application.service.VentaService;
 import co.edu.unipamplona.ferreteria.domain.service.PoliticaAcceso;
@@ -77,9 +79,9 @@ public class BeanConfig {
     }
 
     @Bean
-    SeedService seedService(ProveedorRepositoryPort proveedores, ProductoRepositoryPort productos,
+    SeedUseCase seedUseCase(ProveedorRepositoryPort proveedores, ProductoRepositoryPort productos,
                             CompraRepositoryPort compras, FacturaRepositoryPort facturas,
-                            NumeracionFacturaPort numeracion, PoliticaAcceso acceso) {
-        return new SeedService(proveedores, productos, compras, facturas, numeracion, acceso);
+                            NumeracionFacturaPort numeracion, DataCleanupPort cleanup, TransaccionPort transaccion, PoliticaAcceso acceso) {
+        return new SeedService(proveedores, productos, compras, facturas, numeracion, cleanup, transaccion, acceso);
     }
 }

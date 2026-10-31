@@ -1,0 +1,1062 @@
+{
+ "url": "http://localhost:8080/login",
+ "at": "2026-10-31T05:23:49.024Z",
+ "allow": [],
+ "viewports": [
+  {
+   "width": 1440,
+   "height": 900,
+   "load": "load",
+   "screens": 1,
+   "filled": [
+    0.1
+   ],
+   "motion": {
+    "elements": 0,
+    "css": 0,
+    "transitions": 0,
+    "scripted": 0,
+    "videos": 0,
+    "playingVideos": 0
+   },
+   "metrics": {
+    "viewport": {
+     "w": 1440,
+     "h": 900
+    },
+    "page": {
+     "height": 900,
+     "screens": 1,
+     "words": 7,
+     "img": 0,
+     "video": 0,
+     "canvas": 0,
+     "svg": 0,
+     "sections": 0,
+     "horizontalOverflow": 0,
+     "overflowCulprits": [],
+     "uiFragments": 0,
+     "uiAbuse": false,
+     "realPictures": 0,
+     "videoCount": 0,
+     "uiPictures": 0,
+     "pictureSamples": [],
+     "blendText": 0,
+     "sideScrollers": 0,
+     "brokenImages": [],
+     "emoji": [],
+     "videosNoPoster": 0
+    },
+    "hero": {
+     "text": "Ferretería Ambiente Murano 3D",
+     "words": 4,
+     "chars": 29,
+     "lines": 2,
+     "size": 32,
+     "vw": 2.2,
+     "font": "-apple-system",
+     "weight": 700,
+     "tracking": 0,
+     "leading": 1.2,
+     "top": 153,
+     "tag": "h1",
+     "kind": "heading",
+     "align": "left",
+     "position": "left"
+    },
+    "h1": {
+     "text": "Ferretería Ambiente Murano 3D",
+     "words": 4,
+     "lines": 2,
+     "size": 32,
+     "font": "-apple-system"
+    },
+    "headings": [
+     {
+      "text": "Ferretería Ambiente Murano 3D",
+      "words": 4,
+      "chars": 29,
+      "lines": 2,
+      "size": 32,
+      "vw": 2.2,
+      "font": "-apple-system",
+      "weight": 700,
+      "tracking": 0,
+      "leading": 1.2,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "center",
+      "position": "center",
+      "widthRatio": 0.23,
+      "top": 153,
+      "tag": "h1",
+      "kind": "heading"
+     }
+    ],
+    "headingSummary": {
+     "count": 1,
+     "maxLines": 2,
+     "over2Lines": 0,
+     "statements": 0,
+     "centered": 1,
+     "medianWords": null,
+     "mixedFontHeadings": 0
+    },
+    "type": {
+     "families": [
+      {
+       "family": "-apple-system",
+       "share": 0.88,
+       "mono": false
+      },
+      {
+       "family": "Arial",
+       "share": 0.12,
+       "mono": false
+      }
+     ],
+     "familyCount": 2,
+     "sizes": [
+      16,
+      32
+     ],
+     "sizeCount": 2,
+     "notLoaded": [],
+     "body": null,
+     "measureChars": null,
+     "max": {
+      "size": 32,
+      "vw": 2.2,
+      "font": "-apple-system",
+      "text": "Ferretería Ambiente Murano 3D"
+     },
+     "monoShare": 0,
+     "monoProseShare": 0,
+     "monoFamilies": [],
+     "monoSamples": [],
+     "microLabels": 0,
+     "microLabelShare": 0,
+     "microSamples": [],
+     "upperShare": 0,
+     "centerShare": 0.67,
+     "smallText": 0
+    },
+    "eyebrows": [],
+    "numbered": [],
+    "color": {
+     "bodyBg": "#f5f5f5",
+     "bodyBgHsl": {
+      "h": 0,
+      "s": 0,
+      "l": 0.96
+     },
+     "dark": false,
+     "sectionBgs": [],
+     "textColors": [
+      {
+       "color": "#2c3e50",
+       "share": 0.56
+      },
+      {
+       "color": "#333333",
+       "share": 0.33
+      },
+      {
+       "color": "#ffffff",
+       "share": 0.12
+      }
+     ],
+     "button": {
+      "bg": "#2c3e50",
+      "hsl": {
+       "h": 210,
+       "s": 0.29,
+       "l": 0.24
+      },
+      "fg": "#ffffff"
+     },
+     "lowContrast": []
+    },
+    "buttons": {
+     "count": 1,
+     "inHero": 1,
+     "radius": 4,
+     "height": 42,
+     "withShadow": 0,
+     "withGradient": 0,
+     "mono": 0,
+     "upper": 0,
+     "heroLabels": [
+      "Entrar"
+     ]
+    },
+    "surfaces": {
+     "shadowStatic": 1,
+     "shadowOverlay": 0,
+     "shadowSamples": [
+      "div.login-container → rgba(0, 0, 0, 0.1) 0px 2px 8px 0px"
+     ],
+     "gradients": 0,
+     "scrims": 0,
+     "gradientSamples": [],
+     "gradientText": 0,
+     "hairlines": 0,
+     "hairlineSamples": [],
+     "outlinedBoxes": 0,
+     "dashed": 0,
+     "blurred": 0,
+     "roundedBoxes": 1,
+     "boxRadius": 8,
+     "squareMedia": 0,
+     "roundedMedia": 0,
+     "mediaRadius": 0,
+     "textShadow": 0,
+     "cardRows": []
+    },
+    "heroMedia": [],
+    "nav": null,
+    "fontsLoaded": []
+   },
+   "layout": {
+    "viewport": {
+     "w": 1440,
+     "h": 900
+    },
+    "pageH": 900,
+    "margins": {
+     "left": 552,
+     "right": 552
+    },
+    "sections": [],
+    "gaps": [],
+    "h1s": [
+     {
+      "text": "Ferretería Ambiente Murano 3D",
+      "size": 32,
+      "top": 153,
+      "firstScreen": true
+     }
+    ],
+    "edgeText": [],
+    "edges": [],
+    "leftBlocks": 0,
+    "bodySize": 16,
+    "stage": false,
+    "explains": false,
+    "slivers": [],
+    "voidShare": 0.47,
+    "voidBox": {
+     "x": 0,
+     "y": 480,
+     "w": 1440,
+     "h": 420
+    }
+   },
+   "app": {
+    "viewport": {
+     "w": 1440,
+     "h": 900
+    },
+    "dark": false,
+    "ground": "#f5f5f5",
+    "sidebar": null,
+    "topbar": null,
+    "canvas": {
+     "left": 552,
+     "right": 552
+    },
+    "hero": {
+     "text": "Ferretería Ambiente Murano 3D",
+     "words": 4,
+     "chars": 29,
+     "lines": 2,
+     "size": 32,
+     "vw": 2.2,
+     "font": "-apple-system",
+     "weight": 700,
+     "tracking": 0,
+     "leading": 1.2,
+     "top": 153,
+     "tag": "h1",
+     "kind": "heading",
+     "align": "left",
+     "position": "left"
+    },
+    "charts": 0,
+    "layout": {
+     "panels": 1,
+     "firstScreen": 1,
+     "ragged": [],
+     "voids": []
+    },
+    "tiles": 0,
+    "panels": {
+     "count": 1,
+     "radii": [
+      [
+       8,
+       1
+      ]
+     ],
+     "heavyBorders": 0,
+     "borderSamples": [],
+     "heavyShadows": 0,
+     "softShadows": 1,
+     "shadowSamples": [],
+     "glass": 0
+    },
+    "chips": {
+     "count": 0,
+     "hues": 0,
+     "samples": []
+    },
+    "numbers": {
+     "cells": 0,
+     "leftAligned": 0,
+     "figures": 0,
+     "tabularShare": null,
+     "kpiMax": null
+    },
+    "rows": null,
+    "chartHues": 0,
+    "placeholders": [],
+    "type": {
+     "under13": 0,
+     "tiny": 0,
+     "tinySamples": [],
+     "sizes": [
+      16,
+      32
+     ]
+    },
+    "title": {
+     "text": "Ferretería Ambiente Murano 3D",
+     "size": 32,
+     "top": 153
+    },
+    "colourShare": 0
+   },
+   "consoleErrors": []
+  },
+  {
+   "width": 768,
+   "height": 1024,
+   "load": "load",
+   "screens": 1,
+   "filled": [
+    0.2
+   ],
+   "motion": {
+    "elements": 0,
+    "css": 0,
+    "transitions": 0,
+    "scripted": 0,
+    "videos": 0,
+    "playingVideos": 0
+   },
+   "metrics": {
+    "viewport": {
+     "w": 768,
+     "h": 1024
+    },
+    "page": {
+     "height": 1024,
+     "screens": 1,
+     "words": 7,
+     "img": 0,
+     "video": 0,
+     "canvas": 0,
+     "svg": 0,
+     "sections": 0,
+     "horizontalOverflow": 0,
+     "overflowCulprits": [],
+     "uiFragments": 0,
+     "uiAbuse": false,
+     "realPictures": 0,
+     "videoCount": 0,
+     "uiPictures": 0,
+     "pictureSamples": [],
+     "blendText": 0,
+     "sideScrollers": 0,
+     "brokenImages": [],
+     "emoji": [],
+     "videosNoPoster": 0
+    },
+    "hero": {
+     "text": "Ferretería Ambiente Murano 3D",
+     "words": 4,
+     "chars": 29,
+     "lines": 2,
+     "size": 32,
+     "vw": 4.2,
+     "font": "-apple-system",
+     "weight": 700,
+     "tracking": 0,
+     "leading": 1.2,
+     "top": 153,
+     "tag": "h1",
+     "kind": "heading",
+     "align": "left",
+     "position": "left"
+    },
+    "h1": {
+     "text": "Ferretería Ambiente Murano 3D",
+     "words": 4,
+     "lines": 2,
+     "size": 32,
+     "font": "-apple-system"
+    },
+    "headings": [
+     {
+      "text": "Ferretería Ambiente Murano 3D",
+      "words": 4,
+      "chars": 29,
+      "lines": 2,
+      "size": 32,
+      "vw": 4.2,
+      "font": "-apple-system",
+      "weight": 700,
+      "tracking": 0,
+      "leading": 1.2,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "center",
+      "position": "center",
+      "widthRatio": 0.44,
+      "top": 153,
+      "tag": "h1",
+      "kind": "heading"
+     }
+    ],
+    "headingSummary": {
+     "count": 1,
+     "maxLines": 2,
+     "over2Lines": 0,
+     "statements": 0,
+     "centered": 1,
+     "medianWords": null,
+     "mixedFontHeadings": 0
+    },
+    "type": {
+     "families": [
+      {
+       "family": "-apple-system",
+       "share": 0.88,
+       "mono": false
+      },
+      {
+       "family": "Arial",
+       "share": 0.12,
+       "mono": false
+      }
+     ],
+     "familyCount": 2,
+     "sizes": [
+      16,
+      32
+     ],
+     "sizeCount": 2,
+     "notLoaded": [],
+     "body": null,
+     "measureChars": null,
+     "max": {
+      "size": 32,
+      "vw": 4.2,
+      "font": "-apple-system",
+      "text": "Ferretería Ambiente Murano 3D"
+     },
+     "monoShare": 0,
+     "monoProseShare": 0,
+     "monoFamilies": [],
+     "monoSamples": [],
+     "microLabels": 0,
+     "microLabelShare": 0,
+     "microSamples": [],
+     "upperShare": 0,
+     "centerShare": 0.67,
+     "smallText": 0
+    },
+    "eyebrows": [],
+    "numbered": [],
+    "color": {
+     "bodyBg": "#f5f5f5",
+     "bodyBgHsl": {
+      "h": 0,
+      "s": 0,
+      "l": 0.96
+     },
+     "dark": false,
+     "sectionBgs": [],
+     "textColors": [
+      {
+       "color": "#2c3e50",
+       "share": 0.56
+      },
+      {
+       "color": "#333333",
+       "share": 0.33
+      },
+      {
+       "color": "#ffffff",
+       "share": 0.12
+      }
+     ],
+     "button": {
+      "bg": "#2c3e50",
+      "hsl": {
+       "h": 210,
+       "s": 0.29,
+       "l": 0.24
+      },
+      "fg": "#ffffff"
+     },
+     "lowContrast": []
+    },
+    "buttons": {
+     "count": 1,
+     "inHero": 1,
+     "radius": 4,
+     "height": 42,
+     "withShadow": 0,
+     "withGradient": 0,
+     "mono": 0,
+     "upper": 0,
+     "heroLabels": [
+      "Entrar"
+     ]
+    },
+    "surfaces": {
+     "shadowStatic": 1,
+     "shadowOverlay": 0,
+     "shadowSamples": [
+      "div.login-container → rgba(0, 0, 0, 0.1) 0px 2px 8px 0px"
+     ],
+     "gradients": 0,
+     "scrims": 0,
+     "gradientSamples": [],
+     "gradientText": 0,
+     "hairlines": 0,
+     "hairlineSamples": [],
+     "outlinedBoxes": 0,
+     "dashed": 0,
+     "blurred": 0,
+     "roundedBoxes": 1,
+     "boxRadius": 8,
+     "squareMedia": 0,
+     "roundedMedia": 0,
+     "mediaRadius": 0,
+     "textShadow": 0,
+     "cardRows": []
+    },
+    "heroMedia": [],
+    "nav": null,
+    "fontsLoaded": []
+   },
+   "layout": {
+    "viewport": {
+     "w": 768,
+     "h": 1024
+    },
+    "pageH": 1024,
+    "margins": {
+     "left": 216,
+     "right": 216
+    },
+    "sections": [],
+    "gaps": [],
+    "h1s": [
+     {
+      "text": "Ferretería Ambiente Murano 3D",
+      "size": 32,
+      "top": 153,
+      "firstScreen": true
+     }
+    ],
+    "edgeText": [],
+    "edges": [],
+    "leftBlocks": 0,
+    "bodySize": 16,
+    "stage": false,
+    "explains": false,
+    "slivers": [],
+    "voidShare": 0,
+    "voidBox": null
+   },
+   "app": {
+    "viewport": {
+     "w": 768,
+     "h": 1024
+    },
+    "dark": false,
+    "ground": "#f5f5f5",
+    "sidebar": null,
+    "topbar": null,
+    "canvas": {
+     "left": 216,
+     "right": 216
+    },
+    "hero": {
+     "text": "Ferretería Ambiente Murano 3D",
+     "words": 4,
+     "chars": 29,
+     "lines": 2,
+     "size": 32,
+     "vw": 4.2,
+     "font": "-apple-system",
+     "weight": 700,
+     "tracking": 0,
+     "leading": 1.2,
+     "top": 153,
+     "tag": "h1",
+     "kind": "heading",
+     "align": "left",
+     "position": "left"
+    },
+    "charts": 0,
+    "layout": {
+     "panels": 1,
+     "firstScreen": 1,
+     "ragged": [],
+     "voids": []
+    },
+    "tiles": 0,
+    "panels": {
+     "count": 1,
+     "radii": [
+      [
+       8,
+       1
+      ]
+     ],
+     "heavyBorders": 0,
+     "borderSamples": [],
+     "heavyShadows": 0,
+     "softShadows": 1,
+     "shadowSamples": [],
+     "glass": 0
+    },
+    "chips": {
+     "count": 0,
+     "hues": 0,
+     "samples": []
+    },
+    "numbers": {
+     "cells": 0,
+     "leftAligned": 0,
+     "figures": 0,
+     "tabularShare": null,
+     "kpiMax": null
+    },
+    "rows": null,
+    "chartHues": 0,
+    "placeholders": [],
+    "type": {
+     "under13": 0,
+     "tiny": 0,
+     "tinySamples": [],
+     "sizes": [
+      16,
+      32
+     ]
+    },
+    "title": {
+     "text": "Ferretería Ambiente Murano 3D",
+     "size": 32,
+     "top": 153
+    },
+    "colourShare": 0
+   },
+   "consoleErrors": []
+  },
+  {
+   "width": 390,
+   "height": 844,
+   "load": "load",
+   "screens": 1,
+   "filled": [
+    0.47
+   ],
+   "motion": {
+    "elements": 0,
+    "css": 0,
+    "transitions": 0,
+    "scripted": 0,
+    "videos": 0,
+    "playingVideos": 0
+   },
+   "metrics": {
+    "viewport": {
+     "w": 390,
+     "h": 844
+    },
+    "page": {
+     "height": 844,
+     "screens": 1,
+     "words": 7,
+     "img": 0,
+     "video": 0,
+     "canvas": 0,
+     "svg": 0,
+     "sections": 0,
+     "horizontalOverflow": 0,
+     "overflowCulprits": [],
+     "uiFragments": 0,
+     "uiAbuse": false,
+     "realPictures": 0,
+     "videoCount": 0,
+     "uiPictures": 0,
+     "pictureSamples": [],
+     "blendText": 0,
+     "sideScrollers": 0,
+     "brokenImages": [],
+     "emoji": [],
+     "videosNoPoster": 0
+    },
+    "hero": {
+     "text": "Ferretería Ambiente Murano 3D",
+     "words": 4,
+     "chars": 29,
+     "lines": 2,
+     "size": 32,
+     "vw": 8.2,
+     "font": "-apple-system",
+     "weight": 700,
+     "tracking": 0,
+     "leading": 1.2,
+     "top": 153,
+     "tag": "h1",
+     "kind": "heading",
+     "align": "left",
+     "position": "left"
+    },
+    "h1": {
+     "text": "Ferretería Ambiente Murano 3D",
+     "words": 4,
+     "lines": 2,
+     "size": 32,
+     "font": "-apple-system"
+    },
+    "headings": [
+     {
+      "text": "Ferretería Ambiente Murano 3D",
+      "words": 4,
+      "chars": 29,
+      "lines": 2,
+      "size": 32,
+      "vw": 8.2,
+      "font": "-apple-system",
+      "weight": 700,
+      "tracking": 0,
+      "leading": 1.2,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "center",
+      "position": "center",
+      "widthRatio": 0.84,
+      "top": 153,
+      "tag": "h1",
+      "kind": "heading"
+     }
+    ],
+    "headingSummary": {
+     "count": 1,
+     "maxLines": 2,
+     "over2Lines": 0,
+     "statements": 0,
+     "centered": 1,
+     "medianWords": null,
+     "mixedFontHeadings": 0
+    },
+    "type": {
+     "families": [
+      {
+       "family": "-apple-system",
+       "share": 0.88,
+       "mono": false
+      },
+      {
+       "family": "Arial",
+       "share": 0.12,
+       "mono": false
+      }
+     ],
+     "familyCount": 2,
+     "sizes": [
+      16,
+      32
+     ],
+     "sizeCount": 2,
+     "notLoaded": [],
+     "body": null,
+     "measureChars": null,
+     "max": {
+      "size": 32,
+      "vw": 8.2,
+      "font": "-apple-system",
+      "text": "Ferretería Ambiente Murano 3D"
+     },
+     "monoShare": 0,
+     "monoProseShare": 0,
+     "monoFamilies": [],
+     "monoSamples": [],
+     "microLabels": 0,
+     "microLabelShare": 0,
+     "microSamples": [],
+     "upperShare": 0,
+     "centerShare": 0.67,
+     "smallText": 0
+    },
+    "eyebrows": [],
+    "numbered": [],
+    "color": {
+     "bodyBg": "#f5f5f5",
+     "bodyBgHsl": {
+      "h": 0,
+      "s": 0,
+      "l": 0.96
+     },
+     "dark": false,
+     "sectionBgs": [
+      {
+       "color": "#ffffff",
+       "top": 100,
+       "hsl": {
+        "h": 0,
+        "s": 0,
+        "l": 1
+       }
+      }
+     ],
+     "textColors": [
+      {
+       "color": "#2c3e50",
+       "share": 0.56
+      },
+      {
+       "color": "#333333",
+       "share": 0.33
+      },
+      {
+       "color": "#ffffff",
+       "share": 0.12
+      }
+     ],
+     "button": {
+      "bg": "#2c3e50",
+      "hsl": {
+       "h": 210,
+       "s": 0.29,
+       "l": 0.24
+      },
+      "fg": "#ffffff"
+     },
+     "lowContrast": []
+    },
+    "buttons": {
+     "count": 1,
+     "inHero": 1,
+     "radius": 4,
+     "height": 42,
+     "withShadow": 0,
+     "withGradient": 0,
+     "mono": 0,
+     "upper": 0,
+     "heroLabels": [
+      "Entrar"
+     ]
+    },
+    "surfaces": {
+     "shadowStatic": 1,
+     "shadowOverlay": 0,
+     "shadowSamples": [
+      "div.login-container → rgba(0, 0, 0, 0.1) 0px 2px 8px 0px"
+     ],
+     "gradients": 0,
+     "scrims": 0,
+     "gradientSamples": [],
+     "gradientText": 0,
+     "hairlines": 0,
+     "hairlineSamples": [],
+     "outlinedBoxes": 0,
+     "dashed": 0,
+     "blurred": 0,
+     "roundedBoxes": 1,
+     "boxRadius": 8,
+     "squareMedia": 0,
+     "roundedMedia": 0,
+     "mediaRadius": 0,
+     "textShadow": 0,
+     "cardRows": []
+    },
+    "heroMedia": [],
+    "nav": null,
+    "fontsLoaded": []
+   },
+   "layout": {
+    "viewport": {
+     "w": 390,
+     "h": 844
+    },
+    "pageH": 844,
+    "margins": {
+     "left": 32,
+     "right": 32
+    },
+    "sections": [],
+    "gaps": [],
+    "h1s": [
+     {
+      "text": "Ferretería Ambiente Murano 3D",
+      "size": 32,
+      "top": 153,
+      "firstScreen": true
+     }
+    ],
+    "edgeText": [],
+    "edges": [],
+    "leftBlocks": 0,
+    "bodySize": 16,
+    "stage": false,
+    "explains": false,
+    "slivers": [],
+    "voidShare": 0,
+    "voidBox": null
+   },
+   "app": {
+    "viewport": {
+     "w": 390,
+     "h": 844
+    },
+    "dark": false,
+    "ground": "#f5f5f5",
+    "sidebar": null,
+    "topbar": null,
+    "canvas": {
+     "left": 32,
+     "right": 32
+    },
+    "hero": {
+     "text": "Ferretería Ambiente Murano 3D",
+     "words": 4,
+     "chars": 29,
+     "lines": 2,
+     "size": 32,
+     "vw": 8.2,
+     "font": "-apple-system",
+     "weight": 700,
+     "tracking": 0,
+     "leading": 1.2,
+     "top": 153,
+     "tag": "h1",
+     "kind": "heading",
+     "align": "left",
+     "position": "left"
+    },
+    "charts": 0,
+    "layout": {
+     "panels": 0,
+     "firstScreen": 0,
+     "ragged": [],
+     "voids": []
+    },
+    "tiles": 0,
+    "panels": {
+     "count": 0,
+     "radii": [],
+     "heavyBorders": 0,
+     "borderSamples": [],
+     "heavyShadows": 0,
+     "softShadows": 0,
+     "shadowSamples": [],
+     "glass": 0
+    },
+    "chips": {
+     "count": 0,
+     "hues": 0,
+     "samples": []
+    },
+    "numbers": {
+     "cells": 0,
+     "leftAligned": 0,
+     "figures": 0,
+     "tabularShare": null,
+     "kpiMax": null
+    },
+    "rows": null,
+    "chartHues": 0,
+    "placeholders": [],
+    "type": {
+     "under13": 0,
+     "tiny": 0,
+     "tinySamples": [],
+     "sizes": [
+      16,
+      32
+     ]
+    },
+    "title": {
+     "text": "Ferretería Ambiente Murano 3D",
+     "size": 32,
+     "top": 153
+    },
+    "colourShare": 0
+   },
+   "consoleErrors": []
+  }
+ ],
+ "findings": [
+  {
+   "level": "FAIL",
+   "id": "font-not-dealt",
+   "width": 1440,
+   "message": "The sheet dealt Geist, but the page renders -apple-system, Arial.",
+   "fix": "Load the dealt face (the link on the sheet) and put it first in font-family. A build that falls back to a default face lands on the default look."
+  },
+  {
+   "level": "WARN",
+   "id": "hero-void",
+   "width": 1440,
+   "message": "47% of the first screen is one empty block (1440×420px at 0,480).",
+   "fix": "Place the void on purpose or fill it: move the picture, the film or one fact into it, grow the headline to meet it, or shrink the screen to its content. A void reads as placed only when something closes it on the far side and it is the screen's one rest."
+  },
+  {
+   "level": "WARN",
+   "id": "app-title-size",
+   "width": 390,
+   "message": "The h1 is 32px (\"Ferretería Ambiente Murano 3D\").",
+   "fix": "An app screen is not a landing page: the title is 18-32px (20-24px on a phone)."
+  }
+ ],
+ "images": [
+  {
+   "viewport": "desktop",
+   "width": 1440,
+   "fold": "/home/josue/Documentos/Cursos/pi/domain/frontend/.taste-skill/before/desktop-fold.jpg",
+   "pages": [
+    "/home/josue/Documentos/Cursos/pi/domain/frontend/.taste-skill/before/desktop-page-01.jpg"
+   ],
+   "film": []
+  },
+  {
+   "viewport": "tablet",
+   "width": 768,
+   "fold": "/home/josue/Documentos/Cursos/pi/domain/frontend/.taste-skill/before/tablet-fold.jpg",
+   "pages": [
+    "/home/josue/Documentos/Cursos/pi/domain/frontend/.taste-skill/before/tablet-page-01.jpg"
+   ],
+   "film": []
+  },
+  {
+   "viewport": "mobile",
+   "width": 390,
+   "fold": "/home/josue/Documentos/Cursos/pi/domain/frontend/.taste-skill/before/mobile-fold.jpg",
+   "pages": [
+    "/home/josue/Documentos/Cursos/pi/domain/frontend/.taste-skill/before/mobile-page-01.jpg"
+   ],
+   "film": []
+  }
+ ]
+}
