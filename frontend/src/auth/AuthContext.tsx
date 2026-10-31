@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
-import { registrarSesion } from '../api/client'
+import { alExpirar, fijarToken } from '../api/client'
 import type { Role, UserResponse } from '../api/auth'
 import { estaVencido, leerJwt } from './jwt'
 import { AVISO_SESION_VENCIDA, AuthContext, useAuth, type AuthContextType } from './useAuth'
@@ -26,6 +26,8 @@ function leerAlmacenado(): { sesion: Sesion | null; vencida: boolean } {
   if (!guardado) return { sesion: null, vencida: false }
   const sesion = sesionDesdeToken(guardado)
   if (!sesion) sessionStorage.removeItem(CLAVE_TOKEN)
+  // Before any screen renders: its first request must already carry the token (see alExpirar below).
+  fijarToken(sesion?.token ?? null)
   return { sesion, vencida: !sesion }
 }
 
@@ -34,10 +36,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [inicial] = useState(leerAlmacenado)
   const [sesion, setSesion] = useState<Sesion | null>(inicial.sesion)
   const [aviso, setAviso] = useState<string | null>(inicial.vencida ? AVISO_SESION_VENCIDA : null)
-  const tokenActual = useRef<string | null>(inicial.sesion?.token ?? null)
-
   const cerrar = useCallback((motivo: string | null) => {
-    tokenActual.current = null
+    fijarToken(null)
     sessionStorage.removeItem(CLAVE_TOKEN)
     setSesion(null)
     setAviso(motivo)
@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback((token: string) => {
     const nueva = sesionDesdeToken(token)
     if (!nueva) return false
-    tokenActual.current = token
+    fijarToken(token)
     sessionStorage.setItem(CLAVE_TOKEN, token)
     setSesion(nueva)
     setAviso(null)
@@ -55,9 +55,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => cerrar(null), [cerrar])
 
-  // The HTTP client reads the token from the ref, so a request right after login already carries it.
+  // The token is handed to the HTTP client synchronously (leerAlmacenado, login, cerrar), never in an
+  // effect: React runs the children's effects before the parent's, so a screen that loads data on mount
+  // (after a reload or a direct link) would otherwise send its first request without the token, get a
+  // 401 and end the session. The 401 handler itself is only needed once a response arrives.
   useEffect(() => {
-    registrarSesion(() => tokenActual.current, () => cerrar(AVISO_SESION_VENCIDA))
+    alExpirar(() => cerrar(AVISO_SESION_VENCIDA))
   }, [cerrar])
 
   // End the session exactly when the token expires.

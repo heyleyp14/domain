@@ -14,6 +14,12 @@ export function servidorFalso(rutas: Record<string, Manejador>) {
     const url = new URL(String(entrada), 'http://localhost')
     const metodo = (init.method ?? 'GET').toUpperCase()
     llamadas.push({ metodo, url, cuerpo: init.body ? JSON.parse(String(init.body)) : undefined })
+    // Like the real services: every route except login and register needs the Bearer token. This catches
+    // requests sent before the session is wired (a page that loads data on mount after a reload).
+    const publica = ['/api/auth/login', '/api/auth/register'].includes(url.pathname)
+    if (!publica && !new Headers(init.headers).get('Authorization')?.startsWith('Bearer ')) {
+      return respuestaJson(401, { status: 401, mensaje: 'No autenticado: falta un token válido' })
+    }
     const manejador = rutas[`${metodo} ${url.pathname}`]
     if (!manejador) throw new Error(`Ruta no simulada: ${metodo} ${url.pathname}`)
     return manejador(url, init)

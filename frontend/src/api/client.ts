@@ -20,14 +20,21 @@ export class ApiError extends Error {
   }
 }
 
-// Session hooks, registered by AuthProvider. Kept as plain functions to avoid an import cycle.
-let obtenerToken: () => string | null = () => null
+// The client holds the current token itself. AuthProvider sets it synchronously (on start, login and
+// logout), so the very first request of a screen already carries it, whatever the effect order.
+let tokenSesion: string | null = null
 let alExpirarSesion: () => void = () => {}
 
-export function registrarSesion(token: () => string | null, expirar: () => void): void {
-  obtenerToken = token
-  alExpirarSesion = expirar
+export function fijarToken(token: string | null): void {
+  tokenSesion = token
 }
+
+/** What to do when the server answers 401 to a request made with the session (AuthProvider ends it). */
+export function alExpirar(accion: () => void): void {
+  alExpirarSesion = accion
+}
+
+const obtenerToken = () => tokenSesion
 
 async function leerError(response: Response): Promise<ApiError> {
   const cuerpo = (await response.json().catch(() => ({}))) as Record<string, unknown>
