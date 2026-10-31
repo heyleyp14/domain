@@ -74,6 +74,17 @@ docker compose up -d --build
 | `docs-tecnicos/api/` | Especificación OpenAPI del domain service y de AuthCore (RNF-14) |
 | `docs-tecnicos/matriz-pruebas.md` | Cada criterio de aceptación y la prueba que lo cubre (RNF-13) |
 
+## Producción (fase 5)
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+./scripts/cambiar-clave-admin.sh      # OBLIGATORIO: reemplaza la clave fija del admin de AuthCore
+```
+
+`docker-compose.prod.yml` publica solo el puerto 80 (frontend con proxy), reinicia los servicios
+automáticamente, limita la memoria (unos 710 MB en total) y rota los logs. La guía paso a paso para
+AWS está en `docs-tecnicos/despliegue-aws.md`.
+
 ## Estructura
 - `src/main/java/...` - Código fuente (arquitectura hexagonal)
 - `src/test/` - Pruebas (dominio, aplicación, contrato JPA, REST, concurrencia)
