@@ -399,3 +399,8 @@ tr.inactivo td { color: #7f8c8d; }
 .btn-grande { font-size: 1.15rem; padding: 0.85rem 1.75rem; margin-top: 1rem; }
 .totales { display: grid; grid-template-columns: max-content max-content; gap: 0.25rem 1.5rem; justify-content: end; font-size: 1.05rem; }
 .totales dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ===== Purchases (T3.6) ===== */
+.formulario-ancho { display: flex; flex-direction: column; gap: 0.75rem; }
+.fila-campos { display: flex; gap: 1rem; flex-wrap: wrap; }
+.fila-campos > .form-group { flex: 1 1 14rem; }

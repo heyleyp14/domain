@@ -130,7 +130,8 @@ export interface ItemCompraRequest {
 
 export interface CompraRequest {
   proveedorId: number
-  fecha: string // YYYY-MM-DD
+  /** AAAA-MM-DD; optional (the server uses today in Bogotá) and never in the future. */
+  fecha: string | null
   items: ItemCompraRequest[]
 }
 

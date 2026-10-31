@@ -143,6 +143,35 @@ export const ETIQUETAS_VENTA: Record<string, CampoCliente> = {
   'teléfono': 'clienteTelefono',
 }
 
-export function hayErrores(e: Record<string, string | undefined>): boolean {
+export interface LineaCompraForm {
+  codigo: string
+  cantidad: string
+  precioCompra: string
+}
+
+export interface ErroresLineaCompra {
+  cantidad?: string
+  precioCompra?: string
+}
+
+/** A purchase line (Compra.java): quantity 1-100000, price greater than zero with up to 2 decimals. */
+export function validarLineaCompra(l: LineaCompraForm): ErroresLineaCompra {
+  const e: ErroresLineaCompra = {}
+  const cantidad = l.cantidad.trim()
+  if (!/^\d+$/.test(cantidad) || Number(cantidad) < 1 || Number(cantidad) > 100_000) e.cantidad = 'Entre 1 y 100000 unidades'
+  const precio = l.precioCompra.trim().replace(',', '.')
+  if (!precio) e.precioCompra = 'Escriba el precio'
+  else if (!PRECIO.test(precio) || Number(precio) <= 0) e.precioCompra = 'Mayor que cero, con máximo 2 decimales'
+  return e
+}
+
+export type CampoCompra = 'proveedorId' | 'fecha'
+
+export const ETIQUETAS_COMPRA: Record<string, CampoCompra> = {
+  proveedor: 'proveedorId',
+  fecha: 'fecha',
+}
+
+export function hayErrores(e: object): boolean {
   return Object.values(e).some(Boolean)
 }
