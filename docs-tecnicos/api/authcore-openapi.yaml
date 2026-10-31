@@ -1,0 +1,190 @@
+openapi: 3.0.3
+info:
+  title: AuthCore · Autenticación y roles
+  version: 1.0.0
+  description: |
+    Servicio común a todos los grupos (HU-1 a HU-7). Registra usuarios, autentica con BCrypt y emite el
+    JWT que valida el domain service. Escrito a mano a partir de `AuthController`, sus DTO y
+    `GlobalExceptionHandler` (RNF-14). Describe el comportamiento **actual** del servicio.
+
+    El token se firma con HMAC usando los bytes UTF-8 de `JWT_SECRET`. Con un secreto de 48 a 63 bytes,
+    el algoritmo es HS384. Claims: `sub` (usuario), `uid` (id), `roles` (lista) y `exp`. La duración la
+    define `authcore.jwt.expiration-ms` (por defecto, 3.600.000 ms = 1 hora).
+
+    Diferencias conocidas con el backlog refinado (decisión D2, sin corregir porque AuthCore es código del
+    profesor):
+    - La contraseña exige al menos 6 caracteres; HU-1 pide 8, con letras y números.
+    - El nombre de usuario no se valida como email ni con otro formato (HU-1).
+    - Las rutas protegidas responden **403** (no 401) cuando falta el token o es inválido (HU-4).
+    - Al arrancar se crea el usuario `admin`, con una clave fija definida en `AdminBootstrapRunner`.
+servers:
+  - url: http://localhost:8081
+    description: Local (directo)
+  - url: http://localhost:8080
+    description: Local a través del proxy del frontend
+tags:
+  - name: Autenticación
+    description: Registro e inicio de sesión (públicos).
+  - name: Usuarios
+    description: Administración de usuarios y roles (solo ADMIN).
+
+paths:
+  /api/auth/register:
+    post:
+      tags: [Autenticación]
+      summary: Registrar un usuario (HU-1)
+      description: Público. El usuario nuevo queda con el rol `USER`. La contraseña nunca se devuelve.
+      operationId: registrar
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterRequest' }
+            example: { username: vendedor1, password: '<clave>' }
+      responses:
+        '201':
+          description: Usuario creado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RegisterResponse' }
+        '400': { $ref: '#/components/responses/Validacion' }
+        '409':
+          description: El nombre de usuario ya existe.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /api/auth/login:
+    post:
+      tags: [Autenticación]
+      summary: Iniciar sesión (HU-2)
+      description: Público. Ante credenciales inválidas responde 401 con el mismo mensaje, sin revelar si falló el usuario o la contraseña.
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: Autenticado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LoginResponse' }
+        '400': { $ref: '#/components/responses/Validacion' }
+        '401':
+          description: Credenciales inválidas.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /api/auth/users:
+    get:
+      tags: [Usuarios]
+      summary: Listar usuarios con sus roles
+      description: "Rol: ADMIN."
+      operationId: listarUsuarios
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Usuarios
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/UserResponse' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+
+  /api/auth/users/{id}/roles:
+    post:
+      tags: [Usuarios]
+      summary: Agregar un rol a un usuario (HU-3)
+      description: "Rol: ADMIN. Solo agrega el rol: no existe una operación para quitarlo. El cambio aplica a los tokens que se emitan desde ese momento."
+      operationId: asignarRol
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AssignRoleRequest' }
+            example: { role: ADMIN }
+      responses:
+        '204':
+          description: Rol agregado
+        '400': { $ref: '#/components/responses/Validacion' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404':
+          description: El usuario no existe.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    Validacion:
+      description: Un campo obligatorio falta o no cumple su regla. Se informa solo el primer campo que falla.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example: { error: 'password: password debe tener al menos 6 caracteres' }
+    Prohibido:
+      description: Sin token, con token inválido o vencido, o con un rol distinto de ADMIN. AuthCore responde 403 en todos estos casos (ver D2).
+
+  schemas:
+    Role:
+      type: string
+      enum: [ADMIN, USER]
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+    RegisterRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username: { type: string }
+        password: { type: string, format: password, minLength: 6 }
+    RegisterResponse:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        username: { type: string }
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username: { type: string }
+        password: { type: string, format: password }
+    LoginResponse:
+      type: object
+      properties:
+        token: { type: string, description: JWT para el encabezado `Authorization` del domain service. }
+    AssignRoleRequest:
+      type: object
+      required: [role]
+      properties:
+        role: { $ref: '#/components/schemas/Role' }
+    UserResponse:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        username: { type: string }
+        roles:
+          type: array
+          items: { $ref: '#/components/schemas/Role' }
