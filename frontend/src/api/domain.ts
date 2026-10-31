@@ -2,27 +2,30 @@
 // Basados en domain/src/main/java/co/edu/unipamplona/ferreteria/infrastructure/adapters/in/rest/dto/*
 
 // Tipos compartidos
+/** Money as sent by the server: a JSON number with 2 decimals (Colombian pesos). Display only, never recalculate. */
+export type Dinero = number
+
 export interface Auditoria {
   creadoPor: string
   creadoEn: string // ISO 8601
-  modificadoPor: string
-  modificadoEn: string // ISO 8601
+  modificadoPor: string | null
+  modificadoEn: string | null
 }
 
 // Proveedores
 export interface ProveedorRequest {
   nombre: string
-  telefono: string
-  correo: string
-  direccion: string
+  telefono: string | null
+  correo: string | null
+  direccion: string | null
 }
 
 export interface ProveedorResponse {
   id: number
   nombre: string
-  telefono: string
-  correo: string
-  direccion: string
+  telefono: string | null
+  correo: string | null
+  direccion: string | null
   auditoria: Auditoria
 }
 
@@ -36,7 +39,7 @@ export interface ProveedorDetalleResponse {
 export interface ProductoNuevoRequest {
   codigo: string
   nombre: string
-  precioBase: string // BigDecimal como string
+  precioBase: number
   aplicaIva: boolean
   stockInicial: number
   proveedorId: number
@@ -44,7 +47,7 @@ export interface ProductoNuevoRequest {
 
 export interface ProductoEdicionRequest {
   nombre: string
-  precioBase: string
+  precioBase: number
   aplicaIva: boolean
   proveedorId: number
 }
@@ -52,24 +55,16 @@ export interface ProductoEdicionRequest {
 export interface ProductoResumenResponse {
   codigo: string
   nombre: string
-  precioBase: string
+  precioBase: Dinero
   aplicaIva: boolean
-  precioFinal: string
+  precioFinal: Dinero
   stock: number
   stockBajo: boolean
   activo: boolean
 }
 
-export interface ProductoResponse {
+export interface ProductoResponse extends ProductoResumenResponse {
   id: number
-  codigo: string
-  nombre: string
-  precioBase: string
-  aplicaIva: boolean
-  precioFinal: string
-  stock: number
-  stockBajo: boolean
-  activo: boolean
   proveedorId: number
   proveedorNombre: string
   auditoria: Auditoria
@@ -98,11 +93,11 @@ export interface LineaFacturaResponse {
   codigo: string
   nombre: string
   cantidad: number
-  precioBase: string
+  precioBase: Dinero
   aplicaIva: boolean
-  subtotal: string
-  iva: string
-  total: string
+  subtotal: Dinero
+  iva: Dinero
+  total: Dinero
 }
 
 export interface FacturaResponse {
@@ -114,9 +109,9 @@ export interface FacturaResponse {
   clienteTelefono: string
   vendedor: string
   lineas: LineaFacturaResponse[]
-  subtotal: string
-  iva: string
-  total: string
+  subtotal: Dinero
+  iva: Dinero
+  total: Dinero
   anuladaPor: string | null
   anuladaEn: string | null // ISO 8601
   motivoAnulacion: string | null
@@ -130,7 +125,7 @@ export interface AnulacionRequest {
 export interface ItemCompraRequest {
   codigo: string
   cantidad: number
-  precioCompra: string // BigDecimal como string
+  precioCompra: number
 }
 
 export interface CompraRequest {
@@ -143,8 +138,8 @@ export interface LineaCompraResponse {
   codigo: string
   nombre: string
   cantidad: number
-  precioUnitario: string
-  total: string
+  precioUnitario: Dinero
+  total: Dinero
 }
 
 export interface CompraResponse {
@@ -155,16 +150,16 @@ export interface CompraResponse {
   registradaPor: string
   registradaEn: string // ISO 8601
   lineas: LineaCompraResponse[]
-  total: string
+  total: Dinero
 }
 
 // Comparación de precios
 export interface OfertaResponse {
   proveedorId: number
   proveedorNombre: string
-  ultimoPrecio: string
+  ultimoPrecio: Dinero
   fechaUltimaCompra: string // YYYY-MM-DD
-  menorPrecioHistorico: string
+  menorPrecioHistorico: Dinero
   compras: number
   esMenor: boolean
 }
@@ -181,9 +176,9 @@ export interface LineaReporteResponse {
   codigo: string
   nombre: string
   cantidad: number
-  subtotal: string
-  iva: string
-  total: string
+  subtotal: Dinero
+  iva: Dinero
+  total: Dinero
 }
 
 export interface ResumenFacturaResponse {
@@ -191,7 +186,7 @@ export interface ResumenFacturaResponse {
   fecha: string // ISO 8601
   cliente: string
   vendedor: string
-  total: string
+  total: Dinero
   anulada: boolean
 }
 
@@ -201,9 +196,9 @@ export interface ReporteDiarioResponse {
   facturasEmitidas: number
   facturasAnuladas: number
   unidadesVendidas: number
-  subtotal: string
-  iva: string
-  total: string
+  subtotal: Dinero
+  iva: Dinero
+  total: Dinero
   productos: LineaReporteResponse[]
   facturas: ResumenFacturaResponse[]
 }

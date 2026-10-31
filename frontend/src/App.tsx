@@ -4,6 +4,8 @@ import { AuthProvider, PrivateRoute } from './auth/AuthContext'
 import { Layout } from './components/Layout'
 import { Login } from './pages/Login'
 import { Dashboard } from './pages/Dashboard'
+import { Productos } from './pages/Productos'
+import { Proveedores } from './pages/Proveedores'
 import './index.css'
 
 /** Any authenticated user (USER or ADMIN). */
@@ -23,8 +25,8 @@ export function AppRoutes() {
       <Route element={<ProtectedLayout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/vender" element={<div>Vender - En desarrollo</div>} />
-        <Route path="/productos" element={<div>Productos - En desarrollo</div>} />
-        <Route path="/proveedores" element={<div>Proveedores - En desarrollo</div>} />
+        <Route path="/productos" element={<Productos />} />
+        <Route path="/proveedores" element={<Proveedores />} />
         <Route path="/facturas" element={<div>Facturas - En desarrollo</div>} />
         <Route path="/compras" element={<SoloAdmin><div>Compras - En desarrollo</div></SoloAdmin>} />
         <Route path="/comparar" element={<SoloAdmin><div>Comparar precios - En desarrollo</div></SoloAdmin>} />
