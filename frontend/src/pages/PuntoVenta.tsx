@@ -121,6 +121,7 @@ export function PuntoVenta() {
       <BuscadorProductos label="Agregar producto" onElegir={agregar} exigirStock autoFocus />
 
       <form onSubmit={confirmar} noValidate aria-label="Venta">
+        <div className="venta-carrito">
         <h2>Carrito</h2>
         {carrito.length === 0 ? (
           <p className="sin-resultados">El carrito está vacío. Busque un producto y presione Enter para agregarlo.</p>
@@ -128,7 +129,7 @@ export function PuntoVenta() {
           <div className="table-container">
             <table aria-label="Carrito">
               <thead>
-                <tr><th>Código</th><th>Producto</th><th>Precio final</th><th>Cantidad</th><th>Estimado</th><th></th></tr>
+                <tr><th>Código</th><th>Producto</th><th className="numero">Precio final</th><th className="numero">Cantidad</th><th className="numero">Estimado</th><th></th></tr>
               </thead>
               <tbody>
                 {carrito.map(l => {
@@ -138,7 +139,7 @@ export function PuntoVenta() {
                       <td>{l.producto.codigo}</td>
                       <td>{l.producto.nombre}</td>
                       <td className="numero">{formatearPesos(l.producto.precioFinal)}</td>
-                      <td>
+                      <td className="numero">
                         <input
                           type="number"
                           min={1}
@@ -167,13 +168,12 @@ export function PuntoVenta() {
                 })}
               </tbody>
             </table>
-            <p className="total-estimado">
-              Total estimado: <strong>{formatearPesos(estimar(carrito))}</strong>
-              <span className="ayuda-campo"> (el total oficial, con el IVA por línea, lo calcula el servidor al confirmar)</span>
-            </p>
           </div>
         )}
 
+        </div>
+
+        <div className="card venta-cobro">
         <h2>Cliente</h2>
         <Input label="Nombre del cliente" value={cliente.clienteNombre} error={errores.clienteNombre} maxLength={100}
           onChange={e => cambiarCliente('clienteNombre', e.target.value)} />
@@ -182,10 +182,20 @@ export function PuntoVenta() {
         <Input label="Teléfono (opcional)" type="tel" value={cliente.clienteTelefono} error={errores.clienteTelefono}
           onChange={e => cambiarCliente('clienteTelefono', e.target.value)} />
 
+        {carrito.length > 0 && (
+          <p className="total-cobro">
+            <span>Total estimado</span>
+            <strong>{formatearPesos(estimar(carrito))}</strong>
+          </p>
+        )}
+        {carrito.length > 0 && (
+          <p className="ayuda-campo">El total oficial, con el IVA por línea, lo calcula el servidor al confirmar.</p>
+        )}
         <MensajeError mensaje={error?.mensaje ?? null} detalles={error?.detalles} />
         <button type="submit" className="btn btn-primary btn-grande" disabled={enviando || carrito.length === 0}>
           {enviando ? 'Registrando venta...' : 'Confirmar venta'}
         </button>
+        </div>
       </form>
     </section>
   )

@@ -87,7 +87,7 @@ function DetalleProveedor({ detalle, onCerrar }: { detalle: ProveedorDetalleResp
       ) : (
         <div className="table-container">
           <table>
-            <thead><tr><th>Código</th><th>Nombre</th><th>Precio final</th><th>Stock</th><th>Estado</th></tr></thead>
+            <thead><tr><th>Código</th><th>Nombre</th><th className="numero">Precio final</th><th className="numero">Stock</th><th>Estado</th></tr></thead>
             <tbody>
               {detalle.productos.map(pr => (
                 <tr key={pr.codigo}>

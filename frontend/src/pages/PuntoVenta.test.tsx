@@ -97,7 +97,7 @@ describe('Punto de venta: autocompletado y carrito (T3.4, RF-11, RF-12, RF-13)',
     await agregar('mar')
     await agregar('cla')
     // 29.750,40 + 1.190,50
-    expect(screen.getByText(/Total estimado/)).toHaveTextContent('30.940,90')
+    expect(screen.getByText(/Total estimado/).closest('p')).toHaveTextContent('30.940,90')
     expect(screen.getByText(/lo calcula el servidor/)).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Quitar CLA-01' }))
     expect(carrito().queryByText('CLA-01')).not.toBeInTheDocument()

@@ -50,7 +50,7 @@ export function ReporteDiario() {
       <div className="pagina-encabezado">
         <h1>Reporte diario de ventas</h1>
         {reporte && (
-          <button type="button" className="btn btn-primary" onClick={() => void descargar()} disabled={descargando}>
+          <button type="button" className="btn btn-secondary" onClick={() => void descargar()} disabled={descargando}>
             {descargando ? 'Descargando...' : 'Descargar PDF'}
           </button>
         )}
@@ -68,7 +68,7 @@ export function ReporteDiario() {
         <div role="region" aria-label={`Reporte del ${reporte.fecha}`} className="pagina">
           {reporte.mensaje && <p className="sin-resultados">{reporte.mensaje}</p>}
           <dl className="resumen">
-            <div><dt>Total vendido</dt><dd>{formatearPesos(reporte.total)}</dd></div>
+            <div className={`principal${reporte.total === 0 ? " cero" : ""}`}><dt>Total vendido</dt><dd>{formatearPesos(reporte.total)}</dd></div>
             <div><dt>Subtotal</dt><dd>{formatearPesos(reporte.subtotal)}</dd></div>
             <div><dt>IVA</dt><dd>{formatearPesos(reporte.iva)}</dd></div>
             <div><dt>Facturas emitidas</dt><dd>{reporte.facturasEmitidas}</dd></div>
@@ -84,7 +84,7 @@ export function ReporteDiario() {
               <h2>Productos vendidos</h2>
               <div className="table-container">
                 <table aria-label="Productos vendidos">
-                  <thead><tr><th>Código</th><th>Producto</th><th>Unidades</th><th>Subtotal</th><th>IVA</th><th>Total</th></tr></thead>
+                  <thead><tr><th>Código</th><th>Producto</th><th className="numero">Unidades</th><th className="numero">Subtotal</th><th className="numero">IVA</th><th className="numero">Total</th></tr></thead>
                   <tbody>
                     {reporte.productos.map(p => (
                       <tr key={p.codigo}>
@@ -104,7 +104,7 @@ export function ReporteDiario() {
               <h2>Facturas del día</h2>
               <div className="table-container">
                 <table aria-label="Facturas del día">
-                  <thead><tr><th>Número</th><th>Hora</th><th>Cliente</th><th>Vendedor</th><th>Total</th><th>Estado</th></tr></thead>
+                  <thead><tr><th>Número</th><th>Hora</th><th>Cliente</th><th>Vendedor</th><th className="numero">Total</th><th>Estado</th></tr></thead>
                   <tbody>
                     {reporte.facturas.map(f => (
                       <tr key={f.numero} className={f.anulada ? 'inactivo' : undefined}>

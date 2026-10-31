@@ -37,8 +37,12 @@ export function Login() {
   }
 
   return (
+    <div className="login-pantalla">
     <div className="login-container">
-      <h1>Ferretería Ambiente Murano 3D</h1>
+      <div className="login-marca">
+        <h1>Ferretería Ambiente Murano 3D</h1>
+        <p>Punto de venta · Inicie sesión con su usuario</p>
+      </div>
       <form onSubmit={handleSubmit}>
         {aviso && !error && <div className="aviso" role="status">{aviso}</div>}
         {error && <div className="error" role="alert">{error}</div>}
@@ -71,6 +75,7 @@ export function Login() {
           {enviando ? 'Entrando...' : 'Entrar'}
         </button>
       </form>
+    </div>
     </div>
   )
 }

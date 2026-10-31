@@ -148,8 +148,8 @@ export function Productos() {
             <table>
               <thead>
                 <tr>
-                  <th>Código</th><th>Nombre</th><th>Proveedor</th><th>Precio base</th><th>IVA</th>
-                  <th>Precio final</th><th>Stock</th><th>Estado</th>{esAdmin && <th>Acciones</th>}
+                  <th>Código</th><th>Nombre</th><th>Proveedor</th><th className="numero">Precio base</th><th>IVA</th>
+                  <th className="numero">Precio final</th><th className="numero">Stock</th><th>Estado</th>{esAdmin && <th>Acciones</th>}
                 </tr>
               </thead>
               <tbody>

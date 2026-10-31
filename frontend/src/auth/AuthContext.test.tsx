@@ -37,7 +37,8 @@ describe('Menú y rutas por rol (T3.2, guía 5.3)', () => {
 describe('Sesión (T3.2, RF-01, RF-03, HU-6)', () => {
   it('al recargar la página, la sesión se restaura desde sessionStorage', () => {
     renderApp('/', tokenDePrueba({ sub: 'cajero2' }))
-    expect(screen.getByRole('heading', { name: 'Bienvenido, cajero2' })).toBeInTheDocument()
+    expect(within(screen.getByRole('complementary')).getByText('cajero2')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Inicio' })).toBeInTheDocument()
   })
 
   it('un token vencido no entra: muestra el login con "Su sesión venció" y borra el token', () => {

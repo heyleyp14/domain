@@ -111,7 +111,7 @@ function RegistrarCompra({ proveedores, onRegistrada }: { proveedores: Proveedor
       {lineas.length > 0 && (
         <div className="table-container">
           <table aria-label="Productos de la compra">
-            <thead><tr><th>Código</th><th>Producto</th><th>Stock actual</th><th>Cantidad</th><th>Precio de compra (unidad)</th><th></th></tr></thead>
+            <thead><tr><th>Código</th><th>Producto</th><th className="numero">Stock actual</th><th className="numero">Cantidad</th><th className="numero">Precio de compra (unidad)</th><th></th></tr></thead>
             <tbody>
               {lineas.map(l => {
                 const e = erroresLinea[l.producto.codigo] ?? {}
@@ -120,13 +120,13 @@ function RegistrarCompra({ proveedores, onRegistrada }: { proveedores: Proveedor
                     <td>{l.producto.codigo}</td>
                     <td>{l.producto.nombre}</td>
                     <td className="numero">{l.producto.stock}</td>
-                    <td>
+                    <td className="numero">
                       <input inputMode="numeric" value={l.cantidad} aria-label={`Cantidad de ${l.producto.codigo}`}
                         aria-invalid={e.cantidad ? true : undefined} aria-describedby={e.cantidad ? `cant-${l.producto.codigo}` : undefined}
                         onChange={ev => cambiar(l.producto.codigo, 'cantidad', ev.target.value)} />
                       {e.cantidad && <div id={`cant-${l.producto.codigo}`} className="error-campo">{e.cantidad}</div>}
                     </td>
-                    <td>
+                    <td className="numero">
                       <input inputMode="decimal" value={l.precioCompra} placeholder="18000.00" aria-label={`Precio de compra de ${l.producto.codigo}`}
                         aria-invalid={e.precioCompra ? true : undefined} aria-describedby={e.precioCompra ? `precio-${l.producto.codigo}` : undefined}
                         onChange={ev => cambiar(l.producto.codigo, 'precioCompra', ev.target.value)} />
@@ -163,7 +163,7 @@ function DetalleCompra({ compra, onCerrar }: { compra: CompraResponse; onCerrar:
       <p>{compra.proveedorNombre} · {formatearDia(compra.fecha)} · Registrada por {compra.registradaPor}</p>
       <div className="table-container">
         <table>
-          <thead><tr><th>Código</th><th>Producto</th><th>Cantidad</th><th>Precio unitario</th><th>Total</th></tr></thead>
+          <thead><tr><th>Código</th><th>Producto</th><th className="numero">Cantidad</th><th className="numero">Precio unitario</th><th className="numero">Total</th></tr></thead>
           <tbody>
             {compra.lineas.map(l => (
               <tr key={l.codigo}>
@@ -261,7 +261,7 @@ export function Compras() {
       {actual?.compras && actual.compras.length > 0 && (
         <div className="table-container">
           <table aria-label="Historial de compras">
-            <thead><tr><th>Código</th><th>Fecha</th><th>Proveedor</th><th>Productos</th><th>Total</th><th>Registró</th><th></th></tr></thead>
+            <thead><tr><th>Código</th><th>Fecha</th><th>Proveedor</th><th className="numero">Productos</th><th className="numero">Total</th><th>Registró</th><th></th></tr></thead>
             <tbody>
               {actual.compras.map(c => (
                 <tr key={c.codigo}>

@@ -46,7 +46,7 @@ export function FacturaDetalle({ factura, acciones }: { factura: FacturaResponse
       <div className="table-container">
         <table>
           <thead>
-            <tr><th>Código</th><th>Producto</th><th>Cantidad</th><th>Precio</th><th>Subtotal</th><th>IVA</th><th>Total</th></tr>
+            <tr><th>Código</th><th>Producto</th><th className="numero">Cantidad</th><th className="numero">Precio</th><th className="numero">Subtotal</th><th className="numero">IVA</th><th className="numero">Total</th></tr>
           </thead>
           <tbody>
             {factura.lineas.map(l => (

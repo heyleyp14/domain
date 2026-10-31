@@ -54,7 +54,7 @@ export function Comparar() {
               <div className="table-container">
                 <table aria-label="Precios por proveedor">
                   <thead>
-                    <tr><th>Proveedor</th><th>Precio vigente</th><th>Fecha de la última compra</th><th>Menor precio histórico</th><th>Compras</th></tr>
+                    <tr><th>Proveedor</th><th className="numero">Precio vigente</th><th>Fecha de la última compra</th><th className="numero">Menor precio histórico</th><th className="numero">Compras</th></tr>
                   </thead>
                   <tbody>
                     {comparacion.ofertas.map(o => (
