@@ -12,6 +12,7 @@ import co.edu.unipamplona.ferreteria.application.service.CatalogoService;
 import co.edu.unipamplona.ferreteria.application.service.ComparacionPreciosService;
 import co.edu.unipamplona.ferreteria.application.service.CompraService;
 import co.edu.unipamplona.ferreteria.application.service.ReporteVentasService;
+import co.edu.unipamplona.ferreteria.application.service.SeedService;
 import co.edu.unipamplona.ferreteria.application.service.VentaService;
 import co.edu.unipamplona.ferreteria.domain.service.PoliticaAcceso;
 import java.time.Clock;
@@ -73,5 +74,12 @@ public class BeanConfig {
     ReporteVentasService reporteVentasService(FacturaRepositoryPort facturas, GeneradorPdfPort pdf, DatosNegocio negocio, Clock reloj,
                                               PoliticaAcceso acceso) {
         return new ReporteVentasService(facturas, pdf, negocio, reloj, acceso);
+    }
+
+    @Bean
+    SeedService seedService(ProveedorRepositoryPort proveedores, ProductoRepositoryPort productos,
+                            CompraRepositoryPort compras, FacturaRepositoryPort facturas,
+                            NumeracionFacturaPort numeracion, PoliticaAcceso acceso) {
+        return new SeedService(proveedores, productos, compras, facturas, numeracion, acceso);
     }
 }

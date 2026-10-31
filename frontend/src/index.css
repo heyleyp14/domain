@@ -120,6 +120,15 @@ table { border-collapse: collapse; width: 100%; }
 .pagina { display: flex; flex-direction: column; gap: 20px; }
 .pagina > h2, .pagina section > h2 { margin-top: 12px; }
 .pagina-encabezado { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; min-height: 36px; }
+
+/* Nuevo producto / Nuevo proveedor: permanece en el encabezado en escritorio; en pantallas <= 600px (móvil) se mueve al final de la página */
+.btn.btn-nuevo { display: block; }
+.btn.btn-nuevo-fin { display: none; }
+
+@media (max-width: 600px) {
+  .btn.btn-nuevo { display: none; }
+  .btn.btn-nuevo-fin { display: block; }
+}
 .subtitulo { color: var(--muted); margin-top: 4px; }
 
 /* ===== Cards ===== */

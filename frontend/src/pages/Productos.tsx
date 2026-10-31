@@ -84,7 +84,7 @@ export function Productos() {
       <div className="pagina-encabezado">
         <h1>Productos</h1>
         {esAdmin && !edicion && (
-          <button type="button" className="btn btn-primary" onClick={() => { setAviso(null); setEdicion({ modo: 'nuevo' }) }}>
+          <button type="button" className="btn btn-primary btn-nuevo" onClick={() => { setAviso(null); setEdicion({ modo: 'nuevo' }) }}>
             Nuevo producto
           </button>
         )}
@@ -190,6 +190,12 @@ export function Productos() {
             </button>
           )}
         </>
+      )}
+
+      {esAdmin && !edicion && (
+        <button type="button" className="btn btn-primary btn-nuevo-fin" onClick={() => { setAviso(null); setEdicion({ modo: 'nuevo' }) }}>
+          Nuevo producto
+        </button>
       )}
     </section>
   )
