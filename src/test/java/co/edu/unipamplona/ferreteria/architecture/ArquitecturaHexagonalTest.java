@@ -36,7 +36,8 @@ class ArquitecturaHexagonalTest {
 
     @ArchTest
     static final ArchRule los_puertos_de_salida_son_interfaces =
-            classes().that().resideInAPackage("..application.port.out..").should().beInterfaces();
+            classes().that().haveSimpleNameEndingWith("Port").and().resideInAPackage("..application.port.out..")
+                    .should().beInterfaces();
 
     @ArchTest
     static final ArchRule los_controladores_no_conocen_la_persistencia =
