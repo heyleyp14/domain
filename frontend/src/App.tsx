@@ -10,6 +10,7 @@ import { PuntoVenta } from './pages/PuntoVenta'
 import { Facturas } from './pages/Facturas'
 import { Compras } from './pages/Compras'
 import { Comparar } from './pages/Comparar'
+import { ReporteDiario } from './pages/ReporteDiario'
 import './index.css'
 
 /** Any authenticated user (USER or ADMIN). */
@@ -34,7 +35,7 @@ export function AppRoutes() {
         <Route path="/facturas" element={<Facturas />} />
         <Route path="/compras" element={<SoloAdmin><Compras /></SoloAdmin>} />
         <Route path="/comparar" element={<SoloAdmin><Comparar /></SoloAdmin>} />
-        <Route path="/reporte" element={<SoloAdmin><div>Reporte diario - En desarrollo</div></SoloAdmin>} />
+        <Route path="/reporte" element={<SoloAdmin><ReporteDiario /></SoloAdmin>} />
         <Route path="/usuarios" element={<SoloAdmin><div>Usuarios - En desarrollo</div></SoloAdmin>} />
       </Route>
     </Routes>
