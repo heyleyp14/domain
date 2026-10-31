@@ -1,102 +1,46 @@
-import { useState } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import type { ReactNode } from 'react'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { AuthProvider, PrivateRoute } from './auth/AuthContext'
+import { Layout } from './components/Layout'
+import { Login } from './pages/Login'
+import { Dashboard } from './pages/Dashboard'
+import './index.css'
 
-function Login() {
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+/** Any authenticated user (USER or ADMIN). */
+function ProtectedLayout() {
+  return <PrivateRoute render={() => <Layout />} />
+}
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      })
-      if (!res.ok) throw new Error('Usuario o contraseña incorrectos')
-      const data = await res.json()
-      sessionStorage.setItem('token', data.token)
-      window.location.href = '/'
-    } catch {
-      setError('Usuario o contraseña incorrectos')
-    }
-  }
+/** ADMIN only (guide, section 5.3). The server is still the real barrier; this keeps the UI honest. */
+function SoloAdmin({ children }: { children: ReactNode }) {
+  return <PrivateRoute allowedRoles={['ADMIN']} render={() => children} />
+}
 
+export function AppRoutes() {
   return (
-    <div className="login-container">
-      <h1>Ferretería Ambiente Murano 3D</h1>
-      <form onSubmit={handleSubmit}>
-        {error && <div className="error">{error}</div>}
-        <div>
-          <label htmlFor="username">Usuario</label>
-          <input
-            id="username"
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-            autoComplete="username"
-          />
-        </div>
-        <div>
-          <label htmlFor="password">Contraseña</label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            autoComplete="current-password"
-          />
-        </div>
-        <button type="submit">Entrar</button>
-      </form>
-    </div>
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route element={<ProtectedLayout />}>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/vender" element={<div>Vender - En desarrollo</div>} />
+        <Route path="/productos" element={<div>Productos - En desarrollo</div>} />
+        <Route path="/proveedores" element={<div>Proveedores - En desarrollo</div>} />
+        <Route path="/facturas" element={<div>Facturas - En desarrollo</div>} />
+        <Route path="/compras" element={<SoloAdmin><div>Compras - En desarrollo</div></SoloAdmin>} />
+        <Route path="/comparar" element={<SoloAdmin><div>Comparar precios - En desarrollo</div></SoloAdmin>} />
+        <Route path="/reporte" element={<SoloAdmin><div>Reporte diario - En desarrollo</div></SoloAdmin>} />
+        <Route path="/usuarios" element={<SoloAdmin><div>Usuarios - En desarrollo</div></SoloAdmin>} />
+      </Route>
+    </Routes>
   )
-}
-
-function Layout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="layout">
-      <header>
-        <h1>Ferretería Ambiente Murano 3D</h1>
-        <button onClick={() => { sessionStorage.removeItem('token'); window.location.href = '/login'; }}>
-          Cerrar sesión
-        </button>
-      </header>
-      <main>{children}</main>
-    </div>
-  )
-}
-
-function Dashboard() {
-  return <div>Dashboard - Bienvenido</div>
-}
-
-function PrivateRoute({ children }: { children: React.ReactNode }) {
-  const token = sessionStorage.getItem('token')
-  return token ? <>{children}</> : <Navigate to="/login" replace />
 }
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route
-          path="/*"
-          element={
-            <PrivateRoute>
-              <Layout>
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                </Routes>
-              </Layout>
-            </PrivateRoute>
-          }
-        />
-      </Routes>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
     </BrowserRouter>
   )
 }
