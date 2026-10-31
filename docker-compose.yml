@@ -1,0 +1,91 @@
+name: pi
+services:
+  authcore-db:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-authcoredb}
+      MYSQL_USER: ${MYSQL_USER:-authcore}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?define MYSQL_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?define MYSQL_ROOT_PASSWORD in .env}
+    volumes:
+      - authcore-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    networks:
+      - ferreteria
+
+  authcore:
+    build:
+      context: ../authcore
+      dockerfile: ./docker/authcore.Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://authcore-db:3306/${MYSQL_DATABASE:-authcoredb}?useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-authcore}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:?define MYSQL_PASSWORD in .env}
+      JWT_SECRET: ${JWT_SECRET:?define JWT_SECRET in .env}
+    depends_on:
+      authcore-db:
+        condition: service_healthy
+    networks:
+      - ferreteria
+
+  domain-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ferreteria}
+      POSTGRES_USER: ${POSTGRES_USER:-ferreteria}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?define POSTGRES_PASSWORD in .env}
+    volumes:
+      - domain-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ferreteria} -d ${POSTGRES_DB:-ferreteria}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    networks:
+      - ferreteria
+
+  domain:
+    build: .
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:postgresql://domain-db:5432/${POSTGRES_DB:-ferreteria}
+      DB_USER: ${POSTGRES_USER:-ferreteria}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?define POSTGRES_PASSWORD in .env}
+      JWT_SECRET_BASE64: ${JWT_SECRET_BASE64:?define JWT_SECRET_BASE64 in .env}
+      NEGOCIO_NOMBRE: ${NEGOCIO_NOMBRE:-Ferretería Ambiente Murano 3D}
+      NEGOCIO_CIUDAD: ${NEGOCIO_CIUDAD:-Cúcuta}
+      NEGOCIO_DIRECCION: ${NEGOCIO_DIRECCION:-}
+      NEGOCIO_TELEFONO: ${NEGOCIO_TELEFONO:-}
+      NEGOCIO_NIT: ${NEGOCIO_NIT:-}
+    depends_on:
+      domain-db:
+        condition: service_healthy
+    networks:
+      - ferreteria
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - authcore
+      - domain
+    networks:
+      - ferreteria
+
+volumes:
+  authcore-db-data:
+  domain-db-data:
+
+networks:
+  ferreteria:
