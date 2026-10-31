@@ -1,9 +1,20 @@
 #!/usr/bin/env bash
 # Prueba de humo de punta a punta (HU-1 a HU-12) para Ferretería Ambiente Murano 3D
-# Uso: ./scripts/humo.sh
+# Uso: ./scripts/humo.sh [--evidencia]
+#   Sin argumentos: imprime solo en pantalla (stdout/stderr)
+#   --evidencia: escribe un archivo NUEVO scripts/evidencia/humo-AAAA-MM-DD_HHMMSS.txt
 # Requiere: curl, jq, pdftotext (poppler-utils), docker compose up
 
 set -euo pipefail
+
+# Parsear argumentos
+EVIDENCIA_MODE=false
+for arg in "$@"; do
+    case "$arg" in
+        --evidencia) EVIDENCIA_MODE=true ;;
+        *) echo "Uso: $0 [--evidencia]" >&2; exit 1 ;;
+    esac
+done
 
 # Cargar variables de entorno desde .env (en la raíz del domain/)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -18,15 +29,23 @@ fi
 # Configuración
 AUTHCORE="${AUTHCORE:-http://localhost:8081}"
 DOMAIN="${DOMAIN:-http://localhost:8085}"
-EVIDENCIA_DIR="scripts/evidencia"
-mkdir -p "$EVIDENCIA_DIR"
-FECHA="$(date '+%Y-%m-%d')"
-EVIDENCIA_FILE="$EVIDENCIA_DIR/humo-$FECHA.txt"
 
-# Función para loguear a archivo y consola
-log() {
-    echo "$*" | tee -a "$EVIDENCIA_FILE"
-}
+# Configurar salida de evidencia solo si se pide
+if [[ "$EVIDENCIA_MODE" == true ]]; then
+    EVIDENCIA_DIR="scripts/evidencia"
+    mkdir -p "$EVIDENCIA_DIR"
+    FECHA="$(date '+%Y-%m-%d_%H%M%S')"
+    EVIDENCIA_FILE="$EVIDENCIA_DIR/humo-$FECHA.txt"
+    # log escribe a archivo Y a consola
+    log() {
+        echo "$*" | tee -a "$EVIDENCIA_FILE"
+    }
+else
+    # log escribe solo a consola
+    log() {
+        echo "$*"
+    }
+fi
 
 # Función para paso OK
 ok() {
@@ -417,5 +436,7 @@ fi
 
 log ""
 log "=== TODAS LAS PRUEBAS PASARON ==="
-log "Evidencia guardada en: $EVIDENCIA_FILE"
+if [[ "$EVIDENCIA_MODE" == true ]]; then
+    log "Evidencia guardada en: $EVIDENCIA_FILE"
+fi
 exit 0

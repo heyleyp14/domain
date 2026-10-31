@@ -51,13 +51,16 @@ Servicios:
 - `generar-env.sh` - Genera `.env` con secretos aleatorios
 - `verificar-secreto.sh` - Verifica consistencia JWT_SECRET/JWT_SECRET_BASE64
 - `humo.sh` - Prueba de humo E2E (HU-1 a HU-12 + RNF-09)
+  - Uso: `./scripts/humo.sh` (solo salida en consola)
+  - Uso: `./scripts/humo.sh --evidencia` (guarda archivo NUEVO en `scripts/evidencia/humo-AAAA-MM-DD_HHMMSS.txt`)
 
 ```bash
 cd domain
 ./scripts/generar-env.sh
 ./scripts/verificar-secreto.sh
 docker compose up -d --build
-./scripts/humo.sh
+./scripts/humo.sh          # solo consola
+./scripts/humo.sh --evidencia  # genera archivo de evidencia
 ```
 
 ## Estructura

@@ -11,4 +11,4 @@ out/
 target/
 node_modules/
 dist/
-scripts/evidencia/*.tmp
+scripts/evidencia/
