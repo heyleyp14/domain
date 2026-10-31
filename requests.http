@@ -1,0 +1,91 @@
+### Cliente HTTP de IntelliJ / VS Code (extensión REST Client).
+### 1) Inicie sesión en AuthCore y pegue el token aquí. NO escriba credenciales en este archivo.
+@token = PEGUE_AQUI_EL_JWT_DE_AUTHCORE
+@base = http://localhost:8085
+
+### HU-8 Crear proveedor (ADMIN)
+POST {{base}}/api/proveedores
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "nombre": "Distribuidora Andina", "telefono": "3001234567", "correo": "ventas@andina.co", "direccion": "Calle 5 # 3-10" }
+
+### HU-8 Listar proveedores (filtro opcional por nombre)
+GET {{base}}/api/proveedores?q=andina
+Authorization: Bearer {{token}}
+
+### HU-8 Detalle de un proveedor con sus productos
+GET {{base}}/api/proveedores/1
+Authorization: Bearer {{token}}
+
+### HU-8 Crear producto (ADMIN)
+POST {{base}}/api/productos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "codigo": "MAR-01", "nombre": "Martillo de uña 16 oz", "precioBase": 25000, "aplicaIva": true, "stockInicial": 12, "proveedorId": 1 }
+
+### HU-8 Buscar productos (texto, solo activos, solo stock bajo)
+GET {{base}}/api/productos?q=martillo&soloActivos=true&bajoStock=false
+Authorization: Bearer {{token}}
+
+### HU-8 Modificar producto (ADMIN). El stock no se edita aquí
+PUT {{base}}/api/productos/MAR-01
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "nombre": "Martillo de uña 16 oz reforzado", "precioBase": 27000, "aplicaIva": true, "proveedorId": 1 }
+
+### HU-8 Desactivar / activar (ADMIN)
+POST {{base}}/api/productos/MAR-01/desactivar
+Authorization: Bearer {{token}}
+
+###
+POST {{base}}/api/productos/MAR-01/activar
+Authorization: Bearer {{token}}
+
+### HU-9 Emitir factura (descuenta stock; todo o nada)
+POST {{base}}/api/facturas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "clienteNombre": "Ana Pérez", "clienteTelefono": "3101234567",
+  "items": [ { "codigo": "MAR-01", "cantidad": 2 } ] }
+
+### HU-9 Consultar factura y descargar su PDF
+GET {{base}}/api/facturas/FAC-2026-000001
+Authorization: Bearer {{token}}
+
+###
+GET {{base}}/api/facturas/FAC-2026-000001/pdf
+Authorization: Bearer {{token}}
+
+### HU-9 Anular factura (ADMIN): devuelve el stock
+POST {{base}}/api/facturas/FAC-2026-000001/anulacion
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "motivo": "Error en el pedido" }
+
+### HU-10 Registrar compra a un proveedor (ADMIN): sube el stock
+POST {{base}}/api/compras
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "proveedorId": 1, "fecha": "2026-10-20", "items": [ { "codigo": "MAR-01", "cantidad": 5, "precioCompra": 18000 } ] }
+
+### HU-10 Consultar compras con filtros (ADMIN)
+GET {{base}}/api/compras?proveedorId=1&desde=2026-10-01&hasta=2026-10-31&producto=MAR-01
+Authorization: Bearer {{token}}
+
+### HU-11 Comparar precios de compra entre proveedores (ADMIN)
+GET {{base}}/api/productos/MAR-01/comparacion-precios
+Authorization: Bearer {{token}}
+
+### HU-12 Reporte diario de ventas (ADMIN) y su PDF
+GET {{base}}/api/reportes/ventas-diarias?fecha=2026-10-20
+Authorization: Bearer {{token}}
+
+###
+GET {{base}}/api/reportes/ventas-diarias/pdf?fecha=2026-10-20
+Authorization: Bearer {{token}}

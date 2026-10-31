@@ -1,0 +1,30 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: domain-service-ferreteria
+  datasource:
+    url: jdbc:h2:mem:ferreteria;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+  jpa:
+    open-in-view: false          # los adaptadores abren su propia transacción; nada de lazy loading en la capa REST
+    hibernate:
+      ddl-auto: update
+
+seguridad:
+  jwt:
+    # Clave COMPARTIDA con AuthCore, en Base64. NO se escribe aquí: se entrega por variable de entorno.
+    # Sin esta variable la aplicación no arranca (falla rápido, a propósito).
+    secret-base64: ${JWT_SECRET_BASE64}
+
+ferreteria:
+  zona-horaria: America/Bogota
+  # Datos del negocio que se imprimen en la factura y en los reportes PDF. Se pueden cambiar por variables de entorno.
+  negocio:
+    nombre: ${NEGOCIO_NOMBRE:Ferretería Ambiente Murano 3D}
+    ciudad: ${NEGOCIO_CIUDAD:Cúcuta}
+    direccion: ${NEGOCIO_DIRECCION:}
+    telefono: ${NEGOCIO_TELEFONO:}
+    identificacion: ${NEGOCIO_NIT:}
