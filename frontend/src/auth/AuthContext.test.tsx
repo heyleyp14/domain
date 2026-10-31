@@ -57,7 +57,7 @@ describe('Sesión (T3.2, RF-01, RF-03, HU-6)', () => {
     await userEvent.type(screen.getByLabelText('Contraseña'), 'Clave12345')
     await userEvent.click(screen.getByRole('button', { name: 'Entrar' }))
 
-    expect(await screen.findByText(/Facturas - En desarrollo/)).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Facturas' })).toBeInTheDocument()
     expect(fetchFalso).toHaveBeenCalledWith('/api/auth/login', expect.objectContaining({ method: 'POST' }))
     expect(sessionStorage.getItem('token')).toBe(token)
     expect(localStorage.length).toBe(0)

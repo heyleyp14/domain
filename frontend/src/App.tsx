@@ -7,6 +7,7 @@ import { Dashboard } from './pages/Dashboard'
 import { Productos } from './pages/Productos'
 import { Proveedores } from './pages/Proveedores'
 import { PuntoVenta } from './pages/PuntoVenta'
+import { Facturas } from './pages/Facturas'
 import './index.css'
 
 /** Any authenticated user (USER or ADMIN). */
@@ -28,7 +29,7 @@ export function AppRoutes() {
         <Route path="/vender" element={<PuntoVenta />} />
         <Route path="/productos" element={<Productos />} />
         <Route path="/proveedores" element={<Proveedores />} />
-        <Route path="/facturas" element={<div>Facturas - En desarrollo</div>} />
+        <Route path="/facturas" element={<Facturas />} />
         <Route path="/compras" element={<SoloAdmin><div>Compras - En desarrollo</div></SoloAdmin>} />
         <Route path="/comparar" element={<SoloAdmin><div>Comparar precios - En desarrollo</div></SoloAdmin>} />
         <Route path="/reporte" element={<SoloAdmin><div>Reporte diario - En desarrollo</div></SoloAdmin>} />
