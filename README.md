@@ -63,6 +63,17 @@ docker compose up -d --build
 ./scripts/humo.sh --evidencia  # genera archivo de evidencia
 ```
 
+## Calidad y operación (fase 4)
+
+| Script o documento | Para qué |
+|---|---|
+| `scripts/verificar-authcore.sh` | Criterios de AuthCore que exigen mirar su base y sus logs (BCrypt, sal, contraseña fuera de los logs). Informa las brechas D2 sin fallar |
+| `scripts/respaldo.sh` / `scripts/restaurar.sh` | Respaldo y restauración de las dos bases (RNF-12). Ver `docs-tecnicos/plan-respaldo.md` |
+| `scripts/rendimiento.sh` | Mide la búsqueda con 5.000 productos (RNF-07). **Solo contra una instancia de prueba**. Ver `docs-tecnicos/rendimiento.md` |
+| `scripts/verificar-openapi.py` | Comprueba que las rutas de los controladores y de la especificación OpenAPI coinciden |
+| `docs-tecnicos/api/` | Especificación OpenAPI del domain service y de AuthCore (RNF-14) |
+| `docs-tecnicos/matriz-pruebas.md` | Cada criterio de aceptación y la prueba que lo cubre (RNF-13) |
+
 ## Estructura
 - `src/main/java/...` - Código fuente (arquitectura hexagonal)
 - `src/test/` - Pruebas (dominio, aplicación, contrato JPA, REST, concurrencia)
