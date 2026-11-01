@@ -15,3 +15,5 @@ scripts/evidencia/
 
 # Database backups (scripts/respaldo.sh)
 respaldos/
+# Local AI runtime state
+.atl/
