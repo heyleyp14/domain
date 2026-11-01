@@ -1,0 +1,138 @@
+# AGENTS.md
+
+Guía para agentes que trabajan en este repositorio. Describe el stack, los comandos reales, la
+arquitectura y las convenciones que ya usa el proyecto. Cuando algo aquí no coincida con el código,
+manda el código: corrige esta guía en el mismo cambio.
+
+## Qué es este repositorio
+
+POS e inventario de **Ferretería Ambiente Murano 3D** (Cúcuta). Dos piezas en el mismo repositorio:
+
+- **Backend** (`src/`, `pom.xml`): servicio de dominio Spring Boot 3.5.6 / Java 17, arquitectura
+  hexagonal. Catálogo, proveedores, ventas con factura PDF, compras, comparación de precios y reporte
+  diario.
+- **Frontend** (`frontend/`): SPA React 19 + Vite + TypeScript + Tailwind v4 + shadcn/ui.
+
+El servicio de autenticación (AuthCore, puerto 8081) vive en un repositorio aparte y no está aquí.
+En desarrollo, el proxy de Vite envía `/api/auth/*` a AuthCore y `/api/*` a este servicio.
+
+## Comandos
+
+### Backend
+
+```bash
+cd domain
+JWT_SECRET_BASE64=<base64> mvn -B verify   # compila y corre toda la suite
+JWT_SECRET_BASE64=<base64> mvn -B test     # solo pruebas
+```
+
+- `JWT_SECRET_BASE64` es obligatorio: sin esa variable la aplicación no arranca (falla rápido a
+  propósito). No la escribas en `application.yml` ni la commitees.
+- Perfil `prod` (PostgreSQL): `SPRING_PROFILES_ACTIVE=prod` más `DB_URL`, `DB_USER`, `DB_PASSWORD`.
+- Dev/test usan H2 en memoria (`MODE=PostgreSQL`).
+- No hay Maven wrapper: usa `mvn` del sistema (3.9+).
+
+### Frontend
+
+```bash
+cd domain/frontend
+npm install
+npm run dev      # Vite en http://localhost:5173 (proxy a 8081 y 8085)
+npm test         # Vitest (run), jsdom
+npm run lint     # oxlint
+npm run build    # tsc -b && vite build
+```
+
+### Sistema completo
+
+```bash
+cd domain
+./scripts/generar-env.sh
+docker compose up -d --build   # frontend en http://localhost:8080
+```
+
+## Arquitectura del backend
+
+Paquete base: `co.edu.unipamplona.ferreteria`.
+
+- `domain/` — modelo y reglas de negocio puras (`Producto`, `Factura`, `Compra`, `Dinero`...).
+- `application/` — casos de uso y puertos.
+- `infrastructure/` — adaptadores REST, persistencia JPA, PDF y seguridad.
+- `src/test/` — pruebas por capa: `domain`, `application`, `contract`, `infrastructure`,
+  `architecture` (ArchUnit) y `testsupport`.
+
+Reglas:
+
+- La dependencia apunta hacia `domain`. `domain` no importa Spring, JPA ni HTTP.
+- Los adaptadores abren su propia transacción (`open-in-view: false`); nada de lazy loading en REST.
+- El total oficial de una venta lo calcula el servidor, línea a línea (IVA incluido). El cliente solo
+  muestra un estimado.
+- Los contratos de repositorio se prueban contra las dos implementaciones (memoria y JPA).
+
+## Arquitectura del frontend
+
+- `src/api/` — un cliente HTTP único (`client.ts`) y un módulo por recurso. Siempre mismo origen
+  (`/api`), sin URLs absolutas; el proxy de Vite/nginx resuelve el resto.
+- `src/auth/` — `AuthProvider`, JWT, rutas privadas y roles (`USER`, `ADMIN`).
+- `src/pages/` — una pantalla por archivo; `src/components/` para piezas compartidas.
+- `src/components/ui/` — primitivas shadcn/ui (Button, Card, Input, Checkbox, Select).
+- `src/components/Campo.tsx` — envoltorios accesibles para `input`, `select` y `textarea` (label,
+  error y `aria-describedby`); úsalos en las pantallas migradas.
+- `src/lib/`, `src/hooks/`, `src/stores/` — utilidades, hooks y estado de UI (Zustand).
+- Alias de imports: `@/` apunta a `src/`. Úsalo en código nuevo.
+- `src/index.css` contiene los tokens de diseño y estilos globales.
+
+## Convenciones
+
+- **Idioma de dominio, UI y pruebas: español.** Nombres de clases, campos, rutas, textos y títulos de
+  pruebas están en español (`PuntoVenta`, `emitirFactura`, `formatearPesos`). Mantenlo así.
+- Los nombres de las pruebas citan la historia de usuario o el requisito cuando aplica
+  (`T3.4, RF-11, RF-12`). Esa referencia es parte de la especificación: no la borres.
+- **Las pruebas son la especificación de la UI.** Textos como "Total estimado", roles y etiquetas
+  accesibles se verifican en Vitest. Si cambias una etiqueta visible, actualiza su prueba en el mismo
+  cambio.
+- Pruebas de frontend: Vitest + Testing Library + `src/test/servidor.ts` (servidor falso por
+  `METHOD /ruta`) y `renderApp()` de `src/test/utilidades.tsx`. No inventes un segundo patrón.
+- No dejes datos mock como estado inicial de una pantalla real. Los mocks solo valen como fixture de
+  prueba o detrás de un flag de desarrollo explícito.
+- Errores de API: usa `ApiError` (`status`, `message`, `detalles`). Un 400 marca campos; un 409 lista
+  faltantes. Conserva el estado del formulario cuando el servidor rechaza.
+- Accesibilidad: mantén roles, `aria-label`, `aria-describedby` y foco visibles; hay pruebas que los
+  consultan por rol y nombre accesible.
+- Commits: conventional commits (`feat:`, `fix:`, `docs:`...). Sin atribución de IA ni
+  `Co-Authored-By`.
+- Nunca commitees secretos. `.env`, `target/`, `node_modules/`, `dist/` y `scripts/evidencia/` están
+  ignorados.
+
+## Sistema de diseño
+
+- Estilo "achromatic ledger" (taste-skill, seed 1731905719): fondo piedra, superficies blancas,
+  acción primaria casi negra y un solo tono de datos (`--hue`). No introduzcas colores fuera de los
+  tokens.
+- Usa los tokens de `src/index.css` (`--ground`, `--surface`, `--text`, `--muted`, `--border`,
+  `--hue`, píldoras de estado...) y las primitivas de `src/components/ui/`.
+- Todas las pantallas usan Tailwind + shadcn, igual que los componentes compartidos `Campo` y
+  `Confirmacion`. Quedan restos legacy aislados: `Login` (clases `.login-*` y el botón `.btn`),
+  `BuscadorProductos` (`.buscador`/`.sugerencias`), `FormFields` (`.form-group`/`.ayuda-campo`/
+  `.error-campo`), `MensajeError` (`.mensaje-error`) y el aviso de sesión (`.aviso`). No mezcles esos
+  restos con bloques nuevos.
+- Números monetarios: `formatearPesos()` y `font-variant-numeric: tabular-nums`. No formatees a mano.
+- Fechas: `Intl.DateTimeFormat` con `America/Bogota`.
+- Modo oscuro: se controla con la clase `html.dark`; todo token debe tener su par oscuro.
+
+## Verificación antes de terminar
+
+1. Backend: `JWT_SECRET_BASE64=<base64> mvn -B verify`.
+2. Frontend: `npm test`, `npm run lint`, `npm run build`.
+3. Si tocaste una pantalla, ábrela a 1440, 768 y 390 px (incluido modo oscuro) y comprueba foco,
+   estados vacíos, error y carga.
+4. No declares una verificación que no ejecutaste.
+
+## Documentación
+
+- `README.md` — operación, scripts y despliegue.
+- `frontend/README.md` — desarrollo del frontend (puede estar desactualizado en versiones; manda
+  `frontend/package.json`).
+- `docs/modelo-datos.md` — modelo de datos.
+- `docs-tecnicos/` — API OpenAPI, matriz de pruebas, respaldo, rendimiento y despliegue en AWS.
+- `scripts/` — generación de `.env`, humo E2E, respaldo/restauración, verificación de secretos.
