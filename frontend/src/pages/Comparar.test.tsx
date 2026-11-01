@@ -25,6 +25,13 @@ async function elegir() {
 }
 
 describe('Comparar precios (T3.7, HU-11, RF-19)', () => {
+  it('sin producto muestra el estado inicial y no consulta al servidor', () => {
+    const srv = servidorFalso({})
+    renderApp('/comparar', ADMIN)
+    expect(screen.getByText(/Elige un producto para comparar/)).toBeInTheDocument()
+    expect(srv.llamadas).toHaveLength(0)
+  })
+
   it('muestra cada proveedor con su precio vigente, histórico, fecha y compras, y marca el menor', async () => {
     const srv = servidor({
       codigoProducto: 'MAR-01', nombreProducto: 'Martillo de uña', mensaje: null,

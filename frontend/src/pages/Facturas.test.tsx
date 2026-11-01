@@ -56,6 +56,24 @@ describe('Facturas: consulta (T3.5, HU-9)', () => {
     expect(await screen.findByRole('article', { name: 'Factura FAC-2026-000007' })).toBeInTheDocument()
   })
 
+  it('sin número muestra el estado inicial y no consulta al servidor', () => {
+    const srv = servidorFalso({})
+    renderApp('/facturas', USER)
+    expect(screen.getByText(/Busca una factura para ver su detalle/)).toBeInTheDocument()
+    expect(screen.queryByRole('article')).not.toBeInTheDocument()
+    expect(srv.llamadas).toHaveLength(0)
+  })
+
+  it('limpiar la consulta borra el número y el detalle', async () => {
+    servidorFalso({ 'GET /api/facturas/FAC-2026-000007': json(200, emitida) })
+    renderApp('/facturas?numero=FAC-2026-000007', USER)
+    await screen.findByRole('article', { name: 'Factura FAC-2026-000007' })
+    await userEvent.click(screen.getByRole('button', { name: 'Limpiar' }))
+    expect(screen.getByLabelText('Número de factura')).toHaveValue('')
+    expect(screen.queryByRole('article')).not.toBeInTheDocument()
+    expect(screen.getByText(/Busca una factura para ver su detalle/)).toBeInTheDocument()
+  })
+
   it('un USER no ve el botón de anular', async () => {
     servidorFalso({ 'GET /api/facturas/FAC-2026-000007': json(200, emitida) })
     renderApp('/facturas?numero=FAC-2026-000007', USER)

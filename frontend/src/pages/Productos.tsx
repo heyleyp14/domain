@@ -7,13 +7,16 @@ import { MensajeError } from '../components/FormFields'
 import { useDebounce } from '../hooks/useDebounce'
 import { formatearPesos } from '../lib/formato'
 import { ProductoFormulario } from './ProductoFormulario'
+import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
+import { Checkbox } from '../components/ui/checkbox'
+import { cn } from '@/lib/utils'
 
 const MINIMO_CARACTERES = 2
 const POR_PAGINA = 50
 
 type Edicion = { modo: 'nuevo' } | { modo: 'editar'; producto: ProductoResponse } | null
 
-/** Product catalog (HU-8, RF-04 to RF-09): real-time search for everyone, management for ADMIN. */
 export function Productos() {
   const { hasRole } = useAuth()
   const esAdmin = hasRole('ADMIN')
@@ -32,14 +35,12 @@ export function Productos() {
   const [porDesactivar, setPorDesactivar] = useState<ProductoResponse | null>(null)
   const [ocupado, setOcupado] = useState(false)
 
-  // Avoids downloading the whole catalog: search only with 2+ characters or with a filter on (T4.4).
   const puedeBuscar = q.length >= MINIMO_CARACTERES || soloActivos || bajoStock
-  // Identifies the search on screen; "version" forces a new one after saving or toggling a product.
   const clave = JSON.stringify([q, soloActivos, bajoStock, version])
 
   useEffect(() => {
     if (!puedeBuscar) return
-    let vigente = true // ignore answers that arrive after a newer search started
+    let vigente = true
     buscarProductos({ q, soloActivos, bajoStock })
       .then(r => {
         if (!vigente) return
@@ -80,17 +81,20 @@ export function Productos() {
   const productos = resultado?.productos ?? []
 
   return (
-    <section className="pagina">
-      <div className="pagina-encabezado">
-        <h1>Productos</h1>
+    <section className="flex flex-col gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Productos</h1>
+          <p className="text-sm text-muted-foreground">Catálogo, precios y stock.</p>
+        </div>
         {esAdmin && !edicion && (
-          <button type="button" className="btn btn-primary btn-nuevo" onClick={() => { setAviso(null); setEdicion({ modo: 'nuevo' }) }}>
+          <Button type="button" size="sm" onClick={() => { setAviso(null); setEdicion({ modo: 'nuevo' }) }}>
             Nuevo producto
-          </button>
+          </Button>
         )}
       </div>
 
-      {aviso && <p className="aviso" role="status">{aviso}</p>}
+      {aviso && <p role="status" className="rounded-md border border-border bg-[var(--pill-positive-bg)] px-3 py-2 text-sm text-[var(--pill-positive-ink)]">{aviso}</p>}
 
       {edicion && (
         <ProductoFormulario
@@ -116,67 +120,85 @@ export function Productos() {
         </Confirmacion>
       )}
 
-      <div className="filtros" role="search">
-        <label htmlFor="buscar-producto">Buscar por código, nombre o proveedor</label>
-        <input
-          id="buscar-producto"
-          type="search"
-          value={texto}
-          onChange={e => setTexto(e.target.value)}
-          placeholder="Ej.: martillo, MAR-01"
-          autoFocus
-        />
-        <label><input type="checkbox" checked={soloActivos} onChange={e => setSoloActivos(e.target.checked)} /> Solo activos</label>
-        <label><input type="checkbox" checked={bajoStock} onChange={e => setBajoStock(e.target.checked)} /> Solo stock bajo</label>
+      <div className="flex flex-col sm:flex-row sm:items-end gap-3" role="search">
+        <div className="flex-1">
+          <label htmlFor="buscar-producto" className="sr-only">Buscar por código, nombre o proveedor</label>
+          <Input
+            id="buscar-producto"
+            type="search"
+            value={texto}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTexto(e.target.value)}
+            placeholder="Ej.: martillo, MAR-01"
+            autoFocus
+          />
+        </div>
+        <label className="flex items-center gap-2 text-sm">
+          <Checkbox checked={soloActivos} onCheckedChange={(v: boolean | 'indeterminate') => setSoloActivos(!!v)} />
+          Solo activos
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <Checkbox checked={bajoStock} onCheckedChange={(v: boolean | 'indeterminate') => setBajoStock(!!v)} />
+          Solo stock bajo
+        </label>
       </div>
 
       <MensajeError mensaje={error ?? actual?.error ?? null} />
 
-      {!puedeBuscar && <p className="ayuda-campo">Escriba al menos {MINIMO_CARACTERES} caracteres o active un filtro.</p>}
-      {cargando && <p className="loading">Buscando...</p>}
+      {!puedeBuscar && <p className="text-sm text-muted-foreground">Escriba al menos {MINIMO_CARACTERES} caracteres o active un filtro.</p>}
+      {cargando && <div className="skeleton h-40 w-full" aria-hidden="true" />}
       {resultado && !cargando && resultado.total === 0 && (
-        <p className="sin-resultados">{resultado.mensaje ?? 'No se encontraron productos'}</p>
+        <p className="text-sm text-muted-foreground">{resultado.mensaje ?? 'No se encontraron productos'}</p>
       )}
 
       {productos.length > 0 && (
         <>
-          <p className="ayuda-campo">
+          <p className="text-sm text-muted-foreground">
             {resultado!.total} {resultado!.total === 1 ? 'producto' : 'productos'}
             {resultado!.total > visibles && `; se muestran los primeros ${visibles}`}
           </p>
-          <div className="table-container">
-            <table>
-              <thead>
+          <div className="overflow-x-auto rounded-lg border border-border">
+            <table className="w-full text-sm">
+              <caption className="sr-only">Catálogo de productos</caption>
+              <thead className="bg-muted/50">
                 <tr>
-                  <th>Código</th><th>Nombre</th><th>Proveedor</th><th className="numero">Precio base</th><th>IVA</th>
-                  <th className="numero">Precio final</th><th className="numero">Stock</th><th>Estado</th>{esAdmin && <th>Acciones</th>}
+                  <th className="px-3 py-2 text-left font-medium">Código</th>
+                  <th className="px-3 py-2 text-left font-medium">Nombre</th>
+                  <th className="px-3 py-2 text-left font-medium">Proveedor</th>
+                  <th className="px-3 py-2 text-right font-medium">Precio base</th>
+                  <th className="px-3 py-2 text-left font-medium">IVA</th>
+                  <th className="px-3 py-2 text-right font-medium">Precio final</th>
+                  <th className="px-3 py-2 text-right font-medium">Stock</th>
+                  <th className="px-3 py-2 text-left font-medium">Estado</th>
+                  {esAdmin && <th className="px-3 py-2 text-left font-medium">Acciones</th>}
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-border">
                 {productos.slice(0, visibles).map(p => (
-                  <tr key={p.codigo} className={p.activo ? undefined : 'inactivo'}>
-                    <td>{p.codigo}</td>
-                    <td>{p.nombre}</td>
-                    <td>{p.proveedorNombre}</td>
-                    <td className="numero">{formatearPesos(p.precioBase)}</td>
-                    <td>{p.aplicaIva ? '19 %' : 'No'}</td>
-                    <td className="numero">{formatearPesos(p.precioFinal)}</td>
-                    <td className="numero">
-                      {p.stock} {p.stockBajo && <span className="badge badge-warning">Stock bajo</span>}
+                  <tr key={p.codigo} className={cn(!p.activo && 'opacity-50')}>
+                    <td className="px-3 py-2">{p.codigo}</td>
+                    <td className="px-3 py-2">{p.nombre}</td>
+                    <td className="px-3 py-2">{p.proveedorNombre}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{formatearPesos(p.precioBase)}</td>
+                    <td className="px-3 py-2">{p.aplicaIva ? '19 %' : 'No'}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{formatearPesos(p.precioFinal)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">
+                      {p.stock} {p.stockBajo && <span className="ml-1 inline-flex items-center rounded-full border border-[var(--pill-warning-line)] bg-[var(--pill-warning-bg)] px-1.5 py-0.5 text-xs font-medium text-[var(--pill-warning-ink)]">Stock bajo</span>}
                     </td>
-                    <td>{p.activo ? 'Activo' : 'Inactivo'}</td>
+                    <td className="px-3 py-2">{p.activo ? 'Activo' : 'Inactivo'}</td>
                     {esAdmin && (
-                      <td className="acciones">
-                        <button type="button" className="btn btn-secondary" onClick={() => { setAviso(null); setEdicion({ modo: 'editar', producto: p }) }}>
-                          Editar
-                        </button>
-                        {p.activo ? (
-                          <button type="button" className="btn btn-danger" onClick={() => setPorDesactivar(p)}>Desactivar</button>
-                        ) : (
-                          <button type="button" className="btn btn-secondary" onClick={() => void cambiarEstado(p)} disabled={ocupado}>
-                            Reactivar
-                          </button>
-                        )}
+                      <td className="px-3 py-2">
+                        <div className="flex gap-1.5">
+                          <Button type="button" variant="secondary" size="sm" onClick={() => { setAviso(null); setEdicion({ modo: 'editar', producto: p }) }}>
+                            Editar
+                          </Button>
+                          {p.activo ? (
+                            <Button type="button" variant="destructive" size="sm" onClick={() => setPorDesactivar(p)}>Desactivar</Button>
+                          ) : (
+                            <Button type="button" variant="secondary" size="sm" onClick={() => void cambiarEstado(p)} disabled={ocupado}>
+                              Reactivar
+                            </Button>
+                          )}
+                        </div>
                       </td>
                     )}
                   </tr>
@@ -185,18 +207,13 @@ export function Productos() {
             </table>
           </div>
           {resultado!.total > visibles && (
-            <button type="button" className="btn btn-secondary" onClick={() => setVisibles(v => v + POR_PAGINA)}>
+            <Button type="button" variant="secondary" size="sm" onClick={() => setVisibles(v => v + POR_PAGINA)}>
               Ver más
-            </button>
+            </Button>
           )}
         </>
       )}
 
-      {esAdmin && !edicion && (
-        <button type="button" className="btn btn-primary btn-nuevo-fin" onClick={() => { setAviso(null); setEdicion({ modo: 'nuevo' }) }}>
-          Nuevo producto
-        </button>
-      )}
     </section>
   )
 }

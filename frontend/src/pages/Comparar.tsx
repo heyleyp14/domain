@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
+import { Search } from 'lucide-react'
 import { compararPrecios } from '../api/comparacion'
 import type { ComparacionResponse, ProductoResponse } from '../api/domain'
 import { BuscadorProductos } from '../components/BuscadorProductos'
 import { MensajeError } from '../components/FormFields'
+import { Card } from '../components/ui/card'
 import { formatearDia } from '../lib/fecha'
 import { formatearPesos } from '../lib/formato'
 
@@ -31,50 +33,91 @@ export function Comparar() {
   const menores = comparacion?.ofertas.filter(o => o.esMenor) ?? []
 
   return (
-    <section className="pagina">
-      <h1>Comparar precios entre proveedores</h1>
-      {/* Inactive products are included: their purchase history is still useful for deciding. */}
-      <BuscadorProductos label="Producto a comparar" onElegir={setProducto} soloActivos={false} autoFocus />
+    <section className="flex flex-col gap-5">
+      <header className="flex flex-col gap-1">
+        <h1 className="text-2xl font-bold tracking-tight">Comparar precios entre proveedores</h1>
+        <p className="text-sm text-muted-foreground">Consulta el precio vigente y el histórico de cada proveedor.</p>
+      </header>
 
-      {codigo && !actual && <p className="loading">Comparando...</p>}
+      <Card className="p-4">
+        {/* Inactive products are included: their purchase history is still useful for deciding. */}
+        <BuscadorProductos label="Producto a comparar" onElegir={setProducto} soloActivos={false} autoFocus />
+      </Card>
+
+      {codigo && !actual && (
+        <>
+          <p className="sr-only">Comparando...</p>
+          <div className="skeleton h-40 w-full" aria-hidden="true" />
+        </>
+      )}
       <MensajeError mensaje={actual?.error ?? null} />
 
+      {!codigo && (
+        <Card className="flex flex-col items-center gap-2 px-4 py-12 text-center">
+          <Search className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
+          <p className="text-sm font-medium">Elige un producto para comparar</p>
+          <p className="max-w-md text-sm text-muted-foreground">
+            Verás el precio vigente, el menor histórico y las compras registradas a cada proveedor.
+          </p>
+        </Card>
+      )}
+
       {comparacion && (
-        <div className="card" role="region" aria-label={`Comparación de ${comparacion.codigoProducto}`}>
-          <h2>{comparacion.codigoProducto} · {comparacion.nombreProducto}</h2>
+        <Card role="region" aria-label={`Comparación de ${comparacion.codigoProducto}`} className="flex flex-col gap-4 p-4">
+          <h2 className="text-base font-semibold">{comparacion.codigoProducto} · {comparacion.nombreProducto}</h2>
+
           {comparacion.ofertas.length === 0 ? (
-            <p className="sin-resultados">{comparacion.mensaje ?? 'Este producto aún no tiene compras registradas'}</p>
+            <p className="text-sm text-muted-foreground">{comparacion.mensaje ?? 'Este producto aún no tiene compras registradas'}</p>
           ) : (
             <>
-              <p className="aviso" role="status">
-                {menores.length === 1
-                  ? `Menor precio vigente: ${menores[0].proveedorNombre}, ${formatearPesos(menores[0].ultimoPrecio)}`
-                  : `Empate en el menor precio vigente (${formatearPesos(menores[0].ultimoPrecio)}): ${menores.map(m => m.proveedorNombre).join(', ')}`}
-              </p>
-              <div className="table-container">
-                <table aria-label="Precios por proveedor">
-                  <thead>
-                    <tr><th>Proveedor</th><th className="numero">Precio vigente</th><th>Fecha de la última compra</th><th className="numero">Menor precio histórico</th><th className="numero">Compras</th></tr>
+              {menores.length > 0 && (
+                <p role="status" className="rounded-md border border-border bg-[var(--pill-positive-bg)] px-3 py-2 text-sm text-[var(--pill-positive-ink)]">
+                  {menores.length === 1
+                    ? `Menor precio vigente: ${menores[0].proveedorNombre}, ${formatearPesos(menores[0].ultimoPrecio)}`
+                    : `Empate en el menor precio vigente (${formatearPesos(menores[0].ultimoPrecio)}): ${menores.map(m => m.proveedorNombre).join(', ')}`}
+                </p>
+              )}
+
+              <div className="overflow-x-auto rounded-md border border-border">
+                <table aria-label="Precios por proveedor" className="w-full min-w-[560px] text-sm">
+                  <thead className="bg-muted/50 text-muted-foreground">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-medium">Proveedor</th>
+                      <th className="px-3 py-2 text-right font-medium">Precio vigente</th>
+                      <th className="px-3 py-2 text-left font-medium">Fecha de la última compra</th>
+                      <th className="px-3 py-2 text-right font-medium">Menor precio histórico</th>
+                      <th className="px-3 py-2 text-right font-medium">Compras</th>
+                    </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-border">
                     {comparacion.ofertas.map(o => (
-                      <tr key={o.proveedorId} className={o.esMenor ? 'destacada' : undefined}>
-                        <td>{o.proveedorNombre} {o.esMenor && <span className="badge badge-success">Menor precio</span>}</td>
-                        <td className="numero">{formatearPesos(o.ultimoPrecio)}</td>
-                        <td>{formatearDia(o.fechaUltimaCompra)}</td>
-                        <td className="numero">{formatearPesos(o.menorPrecioHistorico)}</td>
-                        <td className="numero">{o.compras}</td>
+                      <tr key={o.proveedorId} className={o.esMenor ? 'bg-primary/5' : undefined}>
+                        <td className="px-3 py-2">
+                          <span className="inline-flex flex-wrap items-center gap-2">
+                            {o.proveedorNombre}
+                            {o.esMenor && (
+                              <span className="inline-flex items-center rounded-full bg-[var(--pill-positive-bg)] px-2 py-0.5 text-xs font-medium text-[var(--pill-positive-ink)]">
+                                Menor precio
+                              </span>
+                            )}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-right tabular-nums">{formatearPesos(o.ultimoPrecio)}</td>
+                        <td className="px-3 py-2">{formatearDia(o.fechaUltimaCompra)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{formatearPesos(o.menorPrecioHistorico)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{o.compras}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              <p className="ayuda-campo">
+
+              <p className="text-xs leading-relaxed text-muted-foreground">
                 El precio vigente es el de la compra más reciente a cada proveedor. Se muestra también el menor precio que ha cobrado.
               </p>
             </>
           )}
-        </div>
+        </Card>
       )}
     </section>
   )

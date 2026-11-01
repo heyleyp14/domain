@@ -12,6 +12,7 @@ import { Compras } from './pages/Compras'
 import { Comparar } from './pages/Comparar'
 import { ReporteDiario } from './pages/ReporteDiario'
 import { Usuarios } from './pages/Usuarios'
+import { Perfil } from './pages/Perfil'
 import './index.css'
 
 /** Any authenticated user (USER or ADMIN). */
@@ -34,6 +35,7 @@ export function AppRoutes() {
         <Route path="/productos" element={<Productos />} />
         <Route path="/proveedores" element={<Proveedores />} />
         <Route path="/facturas" element={<Facturas />} />
+        <Route path="/perfil" element={<Perfil />} />
         <Route path="/compras" element={<SoloAdmin><Compras /></SoloAdmin>} />
         <Route path="/comparar" element={<SoloAdmin><Comparar /></SoloAdmin>} />
         <Route path="/reporte" element={<SoloAdmin><ReporteDiario /></SoloAdmin>} />

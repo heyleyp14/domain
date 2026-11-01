@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Button } from './ui/button'
 
 interface ConfirmacionProps {
   titulo: string
@@ -7,21 +8,24 @@ interface ConfirmacionProps {
   onConfirmar: () => void
   onCancelar: () => void
   ocupado?: boolean
+  /** `destructive` for actions that remove or disable, `default` for promotions. */
+  variante?: 'destructive' | 'default'
 }
 
 /** Inline confirmation panel (no window.confirm: it blocks the page and cannot be styled or tested). */
-export function Confirmacion({ titulo, children, confirmar, onConfirmar, onCancelar, ocupado }: ConfirmacionProps) {
+export function Confirmacion({ titulo, children, confirmar, onConfirmar, onCancelar, ocupado, variante = 'destructive' }: ConfirmacionProps) {
   return (
-    <div className="card confirmacion" role="alertdialog" aria-labelledby="confirmacion-titulo">
-      <h3 id="confirmacion-titulo">{titulo}</h3>
+    <div role="alertdialog" aria-labelledby="confirmacion-titulo"
+      className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4">
+      <h3 id="confirmacion-titulo" className="text-base font-semibold">{titulo}</h3>
       <div>{children}</div>
-      <div className="acciones">
-        <button type="button" className="btn btn-danger" onClick={onConfirmar} disabled={ocupado}>
+      <div className="flex flex-wrap gap-2">
+        <Button type="button" variant={variante} onClick={onConfirmar} disabled={ocupado}>
           {confirmar}
-        </button>
-        <button type="button" className="btn btn-secondary" onClick={onCancelar} disabled={ocupado}>
+        </Button>
+        <Button type="button" variant="secondary" onClick={onCancelar} disabled={ocupado}>
           Cancelar
-        </button>
+        </Button>
       </div>
     </div>
   )

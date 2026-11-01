@@ -100,6 +100,17 @@ describe('Usuarios (T3.9, HU-1, HU-3)', () => {
       expect(within(screen.getByText('vendedor1').closest('tr')!).getByText('ADMIN')).toBeInTheDocument())
   })
 
+  it('cancelar la promoción no envía el rol', async () => {
+    const srv = servidor()
+    renderApp('/usuarios', ADMIN)
+    const tabla = await screen.findByRole('table', { name: 'Usuarios registrados' })
+    await userEvent.click(within(within(tabla).getByText('vendedor1').closest('tr')!).getByRole('button', { name: 'Hacer administrador' }))
+    const dialogo = screen.getByRole('alertdialog')
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Cancelar' }))
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    expect(srv.llamadasA('POST /api/auth/users/2/roles')).toHaveLength(0)
+  })
+
   it('un USER que abre /usuarios ve "No tiene permiso" y no se consulta nada', () => {
     const srv = servidorFalso({})
     renderApp('/usuarios', tokenDePrueba({ roles: ['USER'] }))

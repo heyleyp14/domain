@@ -1,11 +1,16 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Download } from 'lucide-react'
 import type { ReporteDiarioResponse } from '../api/domain'
 import { pdfReporteDiario, reporteDiario } from '../api/reportes'
-import { Input, MensajeError } from '../components/FormFields'
+import { CampoTexto } from '../components/Campo'
+import { MensajeError } from '../components/FormFields'
+import { Button } from '../components/ui/button'
+import { Card } from '../components/ui/card'
 import { guardarArchivo } from '../lib/descargar'
 import { hoyEnBogota } from '../lib/fecha'
 import { formatearPesos } from '../lib/formato'
+import { cn } from '@/lib/utils'
 
 const HORA = new Intl.DateTimeFormat('es-CO', { timeStyle: 'short', timeZone: 'America/Bogota' })
 const FECHA = /^\d{4}-\d{2}-\d{2}$/
@@ -46,80 +51,145 @@ export function ReporteDiario() {
   }
 
   return (
-    <section className="pagina">
-      <div className="pagina-encabezado">
-        <h1>Reporte diario de ventas</h1>
+    <section className="flex flex-col gap-5">
+      <header className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Reporte diario de ventas</h1>
+          <p className="text-sm text-muted-foreground">Totales, productos y facturas del día.</p>
+        </div>
         {reporte && (
-          <button type="button" className="btn btn-secondary" onClick={() => void descargar()} disabled={descargando}>
+          <Button type="button" variant="secondary" className="min-h-[44px]" onClick={() => void descargar()} disabled={descargando}>
+            <Download className="h-4 w-4" aria-hidden="true" />
             {descargando ? 'Descargando...' : 'Descargar PDF'}
-          </button>
+          </Button>
         )}
-      </div>
-      <div className="filtros">
-        <Input label="Fecha" type="date" value={fecha} max={hoy} onChange={e => setFecha(e.target.value)}
-          ayuda="El día se cuenta en hora de Bogotá" />
-      </div>
+      </header>
 
-      {valida && !actual && <p className="loading">Consultando...</p>}
-      {!valida && <p className="ayuda-campo">Seleccione una fecha.</p>}
+      <Card className="p-4">
+        <div className="max-w-xs">
+          <CampoTexto id="reporte-fecha" label="Fecha" type="date" value={fecha} max={hoy}
+            onChange={e => setFecha(e.target.value)} ayuda="El día se cuenta en hora de Bogotá" />
+        </div>
+      </Card>
+
+      {valida && !actual && (
+        <>
+          <p className="sr-only">Consultando...</p>
+          <div className="skeleton h-40 w-full" aria-hidden="true" />
+        </>
+      )}
+      {!valida && <p className="text-sm text-muted-foreground">Seleccione una fecha.</p>}
       <MensajeError mensaje={actual?.error ?? errorPdf} />
 
       {reporte && (
-        <div role="region" aria-label={`Reporte del ${reporte.fecha}`} className="pagina">
-          {reporte.mensaje && <p className="sin-resultados">{reporte.mensaje}</p>}
-          <dl className="resumen">
-            <div className={`principal${reporte.total === 0 ? " cero" : ""}`}><dt>Total vendido</dt><dd>{formatearPesos(reporte.total)}</dd></div>
-            <div><dt>Subtotal</dt><dd>{formatearPesos(reporte.subtotal)}</dd></div>
-            <div><dt>IVA</dt><dd>{formatearPesos(reporte.iva)}</dd></div>
-            <div><dt>Facturas emitidas</dt><dd>{reporte.facturasEmitidas}</dd></div>
-            <div><dt>Facturas anuladas</dt><dd>{reporte.facturasAnuladas}</dd></div>
-            <div><dt>Unidades vendidas</dt><dd>{reporte.unidadesVendidas}</dd></div>
+        <Card role="region" aria-label={`Reporte del ${reporte.fecha}`} className="flex flex-col gap-4 p-4">
+          {reporte.mensaje && <p className="text-sm text-muted-foreground">{reporte.mensaje}</p>}
+
+          <dl className="grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
+            <div className={cn('bg-card p-4', reporte.total === 0 && 'opacity-60')}>
+              <dt className="text-xs text-muted-foreground">Total vendido</dt>
+              <dd className="mt-1 text-2xl font-bold tabular-nums text-[var(--hue)]">{formatearPesos(reporte.total)}</dd>
+            </div>
+            <div className="bg-card p-4">
+              <dt className="text-xs text-muted-foreground">Subtotal</dt>
+              <dd className="mt-1 text-2xl font-semibold tabular-nums">{formatearPesos(reporte.subtotal)}</dd>
+            </div>
+            <div className="bg-card p-4">
+              <dt className="text-xs text-muted-foreground">IVA</dt>
+              <dd className="mt-1 text-2xl font-semibold tabular-nums">{formatearPesos(reporte.iva)}</dd>
+            </div>
+            <div className="bg-card p-4">
+              <dt className="text-xs text-muted-foreground">Facturas emitidas</dt>
+              <dd className="mt-1 text-2xl font-semibold tabular-nums">{reporte.facturasEmitidas}</dd>
+            </div>
+            <div className="bg-card p-4">
+              <dt className="text-xs text-muted-foreground">Facturas anuladas</dt>
+              <dd className="mt-1 text-2xl font-semibold tabular-nums">{reporte.facturasAnuladas}</dd>
+            </div>
+            <div className="bg-card p-4">
+              <dt className="text-xs text-muted-foreground">Unidades vendidas</dt>
+              <dd className="mt-1 text-2xl font-semibold tabular-nums">{reporte.unidadesVendidas}</dd>
+            </div>
           </dl>
+
           {reporte.facturasAnuladas > 0 && (
-            <p className="ayuda-campo">Las facturas anuladas aparecen en el listado, pero no suman en los totales.</p>
+            <p className="text-xs text-muted-foreground">
+              Las facturas anuladas aparecen en el listado, pero no suman en los totales.
+            </p>
           )}
 
           {reporte.productos.length > 0 && (
-            <>
-              <h2>Productos vendidos</h2>
-              <div className="table-container">
-                <table aria-label="Productos vendidos">
-                  <thead><tr><th>Código</th><th>Producto</th><th className="numero">Unidades</th><th className="numero">Subtotal</th><th className="numero">IVA</th><th className="numero">Total</th></tr></thead>
-                  <tbody>
+            <section className="flex flex-col gap-2">
+              <h2 className="text-base font-semibold">Productos vendidos</h2>
+              <div className="overflow-x-auto rounded-md border border-border">
+                <table aria-label="Productos vendidos" className="w-full min-w-[620px] text-sm">
+                  <thead className="bg-muted/50 text-muted-foreground">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-medium">Código</th>
+                      <th className="px-3 py-2 text-left font-medium">Producto</th>
+                      <th className="px-3 py-2 text-right font-medium">Unidades</th>
+                      <th className="px-3 py-2 text-right font-medium">Subtotal</th>
+                      <th className="px-3 py-2 text-right font-medium">IVA</th>
+                      <th className="px-3 py-2 text-right font-medium">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
                     {reporte.productos.map(p => (
                       <tr key={p.codigo}>
-                        <td>{p.codigo}</td><td>{p.nombre}</td><td className="numero">{p.cantidad}</td>
-                        <td className="numero">{formatearPesos(p.subtotal)}</td><td className="numero">{formatearPesos(p.iva)}</td>
-                        <td className="numero">{formatearPesos(p.total)}</td>
+                        <td className="px-3 py-2">{p.codigo}</td>
+                        <td className="px-3 py-2">{p.nombre}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{p.cantidad}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{formatearPesos(p.subtotal)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{formatearPesos(p.iva)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{formatearPesos(p.total)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            </>
+            </section>
           )}
 
           {reporte.facturas.length > 0 && (
-            <>
-              <h2>Facturas del día</h2>
-              <div className="table-container">
-                <table aria-label="Facturas del día">
-                  <thead><tr><th>Número</th><th>Hora</th><th>Cliente</th><th>Vendedor</th><th className="numero">Total</th><th>Estado</th></tr></thead>
-                  <tbody>
+            <section className="flex flex-col gap-2">
+              <h2 className="text-base font-semibold">Facturas del día</h2>
+              <div className="overflow-x-auto rounded-md border border-border">
+                <table aria-label="Facturas del día" className="w-full min-w-[620px] text-sm">
+                  <thead className="bg-muted/50 text-muted-foreground">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-medium">Número</th>
+                      <th className="px-3 py-2 text-left font-medium">Hora</th>
+                      <th className="px-3 py-2 text-left font-medium">Cliente</th>
+                      <th className="px-3 py-2 text-left font-medium">Vendedor</th>
+                      <th className="px-3 py-2 text-right font-medium">Total</th>
+                      <th className="px-3 py-2 text-left font-medium">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
                     {reporte.facturas.map(f => (
-                      <tr key={f.numero} className={f.anulada ? 'inactivo' : undefined}>
-                        <td><Link to={`/facturas?numero=${encodeURIComponent(f.numero)}`}>{f.numero}</Link></td>
-                        <td>{HORA.format(new Date(f.fecha))}</td><td>{f.cliente}</td><td>{f.vendedor}</td>
-                        <td className="numero">{formatearPesos(f.total)}</td>
-                        <td>{f.anulada ? <span className="badge badge-danger">Anulada</span> : 'Emitida'}</td>
+                      <tr key={f.numero} className={cn(f.anulada && 'opacity-60')}>
+                        <td className="px-3 py-2">
+                          <Link to={`/facturas?numero=${encodeURIComponent(f.numero)}`} className="font-medium">{f.numero}</Link>
+                        </td>
+                        <td className="px-3 py-2">{HORA.format(new Date(f.fecha))}</td>
+                        <td className="px-3 py-2">{f.cliente}</td>
+                        <td className="px-3 py-2">{f.vendedor}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{formatearPesos(f.total)}</td>
+                        <td className="px-3 py-2">
+                          {f.anulada ? (
+                            <span className="inline-flex items-center rounded-full bg-[var(--pill-negative-bg)] px-2 py-0.5 text-xs font-medium text-[var(--pill-negative-ink)]">
+                              Anulada
+                            </span>
+                          ) : 'Emitida'}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            </>
+            </section>
           )}
-        </div>
+        </Card>
       )}
     </section>
   )

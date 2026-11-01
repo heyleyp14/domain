@@ -81,6 +81,26 @@ describe('Punto de venta: autocompletado y carrito (T3.4, RF-11, RF-12, RF-13)',
     expect(carrito().getByLabelText('Cantidad de MAR-01')).toHaveValue(2)
   })
 
+  it('los botones de cantidad ajustan la línea y no bajan de 1', async () => {
+    servidor()
+    renderApp('/vender', USER)
+    await agregar('mar')
+    await userEvent.click(carrito().getByRole('button', { name: 'Aumentar cantidad de MAR-01' }))
+    expect(carrito().getByLabelText('Cantidad de MAR-01')).toHaveValue(2)
+    await userEvent.click(carrito().getByRole('button', { name: 'Disminuir cantidad de MAR-01' }))
+    await userEvent.click(carrito().getByRole('button', { name: 'Disminuir cantidad de MAR-01' }))
+    expect(carrito().getByLabelText('Cantidad de MAR-01')).toHaveValue(1)
+  })
+
+  it('limpiar el carrito deja la venta sin confirmar', async () => {
+    servidor()
+    renderApp('/vender', USER)
+    await agregar('mar')
+    await userEvent.click(screen.getByRole('button', { name: 'Limpiar carrito' }))
+    expect(screen.getByText(/El carrito está vacío/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Confirmar venta' })).toBeDisabled()
+  })
+
   it('avisa cuando la cantidad supera el stock mostrado', async () => {
     servidor()
     renderApp('/vender', USER)

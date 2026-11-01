@@ -3,8 +3,10 @@ import { ApiError } from '../api/client'
 import type { UserResponse } from '../api/auth'
 import { agregarRol, crearUsuario, listarUsuarios } from '../api/usuarios'
 import { useAuth } from '../auth/useAuth'
+import { CampoTexto } from '../components/Campo'
 import { Confirmacion } from '../components/Confirmacion'
-import { Input, MensajeError } from '../components/FormFields'
+import { MensajeError } from '../components/FormFields'
+import { Button } from '../components/ui/button'
 
 interface ErroresUsuario {
   username?: string
@@ -59,19 +61,27 @@ function CrearUsuario({ onCreado }: { onCreado: (username: string) => void }) {
   }
 
   return (
-    <form className="card formulario" onSubmit={enviar} noValidate aria-label="Crear usuario">
-      <h2>Crear usuario</h2>
-      <p className="ayuda-campo">El usuario nuevo empieza con el rol USER (vendedor).</p>
-      <Input label="Usuario" value={username} error={errores.username} autoComplete="off"
-        onChange={e => { setUsername(e.target.value); setErrores(x => ({ ...x, username: undefined })) }} />
-      <Input label="Contraseña" type="password" value={password} error={errores.password} autoComplete="new-password"
-        ayuda="Mínimo 8 caracteres, con letras y números"
-        onChange={e => { setPassword(e.target.value); setErrores(x => ({ ...x, password: undefined })) }} />
-      <Input label="Repita la contraseña" type="password" value={repetir} error={errores.repetir} autoComplete="new-password"
-        onChange={e => { setRepetir(e.target.value); setErrores(x => ({ ...x, repetir: undefined })) }} />
+    <form className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4" onSubmit={enviar} noValidate
+      aria-label="Crear usuario">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-base font-semibold">Crear usuario</h2>
+        <p className="text-xs text-muted-foreground">El usuario nuevo empieza con el rol USER (vendedor).</p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <CampoTexto id="usuario-username" label="Usuario" value={username} error={errores.username} autoComplete="off"
+          onChange={e => { setUsername(e.target.value); setErrores(x => ({ ...x, username: undefined })) }} />
+        <CampoTexto id="usuario-password" label="Contraseña" type="password" value={password} error={errores.password}
+          autoComplete="new-password" ayuda="Mínimo 8 caracteres, con letras y números"
+          onChange={e => { setPassword(e.target.value); setErrores(x => ({ ...x, password: undefined })) }} />
+        <CampoTexto id="usuario-repetir" label="Repita la contraseña" type="password" value={repetir} error={errores.repetir}
+          autoComplete="new-password"
+          onChange={e => { setRepetir(e.target.value); setErrores(x => ({ ...x, repetir: undefined })) }} />
+      </div>
+
       <MensajeError mensaje={error} />
-      <div className="acciones">
-        <button type="submit" className="btn btn-primary" disabled={enviando}>{enviando ? 'Creando...' : 'Crear usuario'}</button>
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit" disabled={enviando}>{enviando ? 'Creando...' : 'Crear usuario'}</Button>
       </div>
     </form>
   )
@@ -115,43 +125,75 @@ export function Usuarios() {
   }
 
   return (
-    <section className="pagina">
-      <h1>Usuarios</h1>
-      {aviso && <p className="aviso" role="status">{aviso}</p>}
+    <section className="flex flex-col gap-4">
+      <header className="flex flex-col gap-1">
+        <h1 className="text-2xl font-bold tracking-tight">Usuarios</h1>
+        <p className="text-sm text-muted-foreground">Cuentas y roles del punto de venta.</p>
+      </header>
+
+      {aviso && (
+        <p role="status" className="rounded-md border border-border bg-[var(--pill-positive-bg)] px-3 py-2 text-sm text-[var(--pill-positive-ink)]">
+          {aviso}
+        </p>
+      )}
+
       <CrearUsuario onCreado={username => { setAviso(`Usuario ${username} creado con el rol USER`); setVersion(v => v + 1) }} />
 
       {porPromover && (
         <Confirmacion titulo={`¿Hacer administrador a ${porPromover.username}?`} confirmar="Hacer administrador" ocupado={ocupado}
+          variante="default"
           onConfirmar={() => void promover(porPromover)} onCancelar={() => setPorPromover(null)}>
-          <p>Podrá administrar el catálogo, las compras, anular facturas y ver los reportes. AuthCore no permite quitar un rol después.</p>
+          <p className="text-sm text-muted-foreground">
+            Podrá administrar el catálogo, las compras, anular facturas y ver los reportes. AuthCore no permite quitar un rol después.
+          </p>
         </Confirmacion>
       )}
 
-      <h2>Usuarios registrados</h2>
-      <MensajeError mensaje={error ?? actual?.error ?? null} />
-      {!actual && <p className="loading">Cargando...</p>}
-      {actual?.usuarios && (
-        <div className="table-container">
-          <table aria-label="Usuarios registrados">
-            <thead><tr><th>Usuario</th><th>Roles</th><th></th></tr></thead>
-            <tbody>
-              {actual.usuarios.map(u => (
-                <tr key={u.id}>
-                  <td>{u.username}{u.username === user?.username && ' (usted)'}</td>
-                  <td>{[...u.roles].sort().map(r => <span key={r} className={`badge ${r === 'ADMIN' ? 'badge-info' : 'badge-success'}`}>{r}</span>)}</td>
-                  <td>
-                    {!u.roles.includes('ADMIN') && (
-                      <button type="button" className="btn btn-secondary" onClick={() => { setAviso(null); setPorPromover(u) }}>
-                        Hacer administrador
-                      </button>
-                    )}
-                  </td>
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-semibold">Usuarios registrados</h2>
+        <MensajeError mensaje={error ?? actual?.error ?? null} />
+        {!actual && <div className="skeleton h-40 w-full" aria-hidden="true" />}
+
+        {actual?.usuarios && (
+          <div className="overflow-x-auto rounded-lg border border-border">
+            <table aria-label="Usuarios registrados" className="w-full text-sm">
+              <thead className="bg-muted/50 text-muted-foreground">
+                <tr>
+                  <th className="px-3 py-2 text-left font-medium">Usuario</th>
+                  <th className="px-3 py-2 text-left font-medium">Roles</th>
+                  <th className="px-3 py-2 text-right font-medium"><span className="sr-only">Acciones</span></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </thead>
+              <tbody className="divide-y divide-border">
+                {actual.usuarios.map(u => (
+                  <tr key={u.id}>
+                    <td className="px-3 py-2 font-medium">{u.username}{u.username === user?.username && ' (usted)'}</td>
+                    <td className="px-3 py-2">
+                      <span className="flex flex-wrap gap-1.5">
+                        {[...u.roles].sort().map(r => (
+                          <span key={r} className={r === 'ADMIN'
+                            ? 'inline-flex items-center rounded-full bg-[var(--pill-info-bg)] px-2 py-0.5 text-xs font-medium text-[var(--pill-info-ink)]'
+                            : 'inline-flex items-center rounded-full bg-[var(--pill-positive-bg)] px-2 py-0.5 text-xs font-medium text-[var(--pill-positive-ink)]'}>
+                            {r}
+                          </span>
+                        ))}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {!u.roles.includes('ADMIN') && (
+                        <Button type="button" variant="secondary" size="sm"
+                          onClick={() => { setAviso(null); setPorPromover(u) }}>
+                          Hacer administrador
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </section>
   )
 }
