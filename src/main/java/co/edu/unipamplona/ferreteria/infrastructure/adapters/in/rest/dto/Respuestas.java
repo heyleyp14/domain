@@ -16,6 +16,8 @@ import co.edu.unipamplona.ferreteria.domain.model.Producto;
 import co.edu.unipamplona.ferreteria.domain.model.Proveedor;
 import co.edu.unipamplona.ferreteria.domain.model.ReporteDiario;
 import co.edu.unipamplona.ferreteria.domain.model.ResumenFactura;
+import co.edu.unipamplona.ferreteria.domain.model.TendenciaVentas;
+import co.edu.unipamplona.ferreteria.domain.model.VentaDiaria;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -166,6 +168,21 @@ public final class Respuestas {
                     p.productos().contenido().stream().map(LineaReporteR::de).toList(),
                     p.facturas().total(), p.facturas().pagina(), p.facturas().tamano(), p.facturas().totalPaginas(),
                     p.facturas().contenido().stream().map(ResumenFacturaR::de).toList());
+        }
+    }
+
+    public record VentaDiariaR(LocalDate fecha, BigDecimal total, int facturasEmitidas, int unidadesVendidas) {
+        static VentaDiariaR de(VentaDiaria d) {
+            return new VentaDiariaR(d.fecha(), d.total().valor(), d.facturasEmitidas(), d.unidadesVendidas());
+        }
+    }
+
+    public record TendenciaVentasR(LocalDate desde, LocalDate hasta, long dias, BigDecimal total, String mensaje,
+                                   List<VentaDiariaR> puntos) {
+        public static TendenciaVentasR de(TendenciaVentas t) {
+            return new TendenciaVentasR(t.desde(), t.hasta(), t.diasDelRango(), t.total().valor(),
+                    t.sinVentas() ? "No se registraron ventas en el periodo consultado" : null,
+                    t.dias().stream().map(VentaDiariaR::de).toList());
         }
     }
 }

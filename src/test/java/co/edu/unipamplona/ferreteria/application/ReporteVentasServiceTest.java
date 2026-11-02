@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import co.edu.unipamplona.ferreteria.application.port.in.DocumentoPdf;
 import co.edu.unipamplona.ferreteria.domain.exception.*;
 import co.edu.unipamplona.ferreteria.domain.model.*;
+import co.edu.unipamplona.ferreteria.testsupport.Datos;
 import java.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -87,6 +88,39 @@ class ReporteVentasServiceTest {
         assertThrows(ValorInvalidoException.class, () -> e.reporte.diario(e.admin(), "2026-02-30"));
         assertThrows(AccesoDenegadoException.class, () -> e.reporte.diario(e.vendedor(), "2026-10-20"));
         assertThrows(AccesoDenegadoException.class, () -> e.reporte.pdf(e.vendedor(), "2026-10-20"));
+    }
+
+    @Test
+    @DisplayName("T3.5, RF-17: la tendencia cubre el rango pedido y termina hoy en Bogotá")
+    void tendenciaDelPeriodo() {
+        e.vender("Ana", item("MAR-01", 2));
+        TendenciaVentas t = e.reporte.tendencia(e.admin(), 7);
+        assertEquals(7, t.dias().size());
+        assertEquals(Datos.HOY.minusDays(6), t.desde());
+        assertEquals(Datos.HOY, t.hasta());
+        assertEquals(Dinero.de("23800"), t.total());
+        assertEquals(Dinero.de("23800"), t.dias().get(6).total());
+    }
+
+    @Test
+    @DisplayName("T3.5: cada venta cae en su día del calendario de Bogotá")
+    void tendenciaPorDia() {
+        e.vender("Hoy", item("MAR-01", 1));
+        e.avanzar(Duration.ofDays(1));
+        e.vender("Mañana", item("MAR-01", 2));
+        TendenciaVentas t = e.reporte.tendencia(e.admin(), 2);
+        assertEquals(Datos.HOY.plusDays(1), t.hasta());
+        assertEquals(Dinero.de("11900"), t.dias().get(0).total());
+        assertEquals(Dinero.de("23800"), t.dias().get(1).total());
+        assertEquals(2, t.facturasEmitidas());
+    }
+
+    @Test
+    @DisplayName("T3.5: rango fuera de 1 a 90 días es 400; solo el administrador (403)")
+    void tendenciaValidaciones() {
+        assertThrows(ValorInvalidoException.class, () -> e.reporte.tendencia(e.admin(), 0));
+        assertThrows(ValorInvalidoException.class, () -> e.reporte.tendencia(e.admin(), 91));
+        assertThrows(AccesoDenegadoException.class, () -> e.reporte.tendencia(e.vendedor(), 7));
     }
 
     @Test

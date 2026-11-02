@@ -82,9 +82,20 @@ de la ferretería (`src/main/resources/images/logo.jpg`) y las fuentes Lato + IB
 ## Seed de desarrollo
 
 `POST /api/seed` (ADMIN) reinicia la base y crea 20 proveedores, 20 productos, 20 compras y 20
-facturas. Cada factura usa la plantilla nueva y, si Cloudinary está configurado, genera y publica su
-PDF en `pdfUrl`; sin Cloudinary el seed funciona igual y deja `pdfUrl` nulo. La ejecución tarda unos
-20–25 s por las 20 subidas.
+facturas con **las fechas del día en que se ejecuta** (hora de Bogotá). No hay tareas automáticas: el
+seed se ejecuta a mano cuando se quiere una demo completa, y cada ejecución deja los datos "de hoy".
+
+- 6 productos quedan en stock bajo (0, 0, 1, 2, 3 y 5) para llenar "Stock bajo".
+- 7 facturas son de hoy (una anulada) y llenan "Ventas de hoy", "Más vendidos hoy" y el reporte diario.
+- Las otras 13 se reparten entre hace 1 y 25 días, así la gráfica y "Facturas" tienen historia.
+- Las compras van de hace 40 a hace 21 días, para que "Comparar precios" muestre el precio vigente.
+
+Cada factura usa la plantilla nueva y, si Cloudinary está configurado, genera y publica su PDF en
+`pdfUrl`; sin Cloudinary el seed funciona igual y deja `pdfUrl` nulo. La ejecución tarda unos 20–25 s
+por las 20 subidas.
+
+Para ejecutarlo sin armar el `curl`: `./scripts/seed.sh` (lee `ADMIN_PASSWORD` de `.env`, inicia sesión
+como admin y llama al endpoint).
 
 ## Paginación
 
@@ -121,6 +132,7 @@ Servicios:
 
 - `generar-env.sh` - Genera `.env` con secretos aleatorios
 - `verificar-secreto.sh` - Verifica consistencia JWT_SECRET/JWT_SECRET_BASE64
+- `seed.sh` - Seed de demostración con las fechas del día (reinicia la base)
 - `humo.sh` - Prueba de humo E2E (HU-1 a HU-12 + RNF-09)
   - Uso: `./scripts/humo.sh` (solo salida en consola)
   - Uso: `./scripts/humo.sh --evidencia` (guarda archivo NUEVO en `scripts/evidencia/humo-AAAA-MM-DD_HHMMSS.txt`)
@@ -130,6 +142,7 @@ cd domain
 ./scripts/generar-env.sh
 ./scripts/verificar-secreto.sh
 docker compose up -d --build
+./scripts/seed.sh          # datos de demo con las fechas de hoy
 ./scripts/humo.sh          # solo consola
 ./scripts/humo.sh --evidencia  # genera archivo de evidencia
 ```
@@ -139,6 +152,7 @@ docker compose up -d --build
 | Script o documento | Para qué |
 |---|---|
 | `scripts/verificar-authcore.sh` | Criterios de AuthCore que exigen mirar su base y sus logs (BCrypt, sal, contraseña fuera de los logs). Informa las brechas D2 sin fallar |
+| `scripts/seed.sh` | Seed de demostración con las fechas del día: 20 por entidad, ventas de hoy, stock bajo e historia reciente. Reinicia la base |
 | `scripts/respaldo.sh` / `scripts/restaurar.sh` | Respaldo y restauración de las dos bases (RNF-12). Ver `docs-tecnicos/plan-respaldo.md` |
 | `scripts/rendimiento.sh` | Mide la búsqueda con 5.000 productos (RNF-07). **Solo contra una instancia de prueba**. Ver `docs-tecnicos/rendimiento.md` |
 | `scripts/verificar-openapi.py` | Comprueba que las rutas de los controladores y de la especificación OpenAPI coinciden |

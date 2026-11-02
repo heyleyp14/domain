@@ -526,6 +526,29 @@ paths:
         '401': { $ref: '#/components/responses/NoAutenticado' }
         '403': { $ref: '#/components/responses/SinPermiso' }
 
+  /api/reportes/tendencia-ventas:
+    get:
+      tags: [Reportes]
+      summary: Tendencia de ventas por día (T3.5)
+      description: |
+        Rol: ADMIN. Serie para la gráfica de Inicio: un punto por día, terminando hoy en America/Bogota.
+        Incluye los días sin ventas en cero y no suma las facturas anuladas. `dias` acepta de 1 a 90.
+      operationId: tendenciaVentas
+      parameters:
+        - name: dias
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 90, default: 90 }
+      responses:
+        '200':
+          description: Serie de ventas diarias
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TendenciaVentasR' }
+        '400': { $ref: '#/components/responses/DatosInvalidos' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+
 components:
   securitySchemes:
     bearerAuth:
@@ -914,3 +937,21 @@ components:
         facturas:
           type: array
           items: { $ref: '#/components/schemas/ResumenFacturaR' }
+    VentaDiariaR:
+      type: object
+      properties:
+        fecha: { type: string, format: date }
+        total: { $ref: '#/components/schemas/Dinero' }
+        facturasEmitidas: { type: integer }
+        unidadesVendidas: { type: integer }
+    TendenciaVentasR:
+      type: object
+      properties:
+        desde: { type: string, format: date }
+        hasta: { type: string, format: date }
+        dias: { type: integer }
+        total: { $ref: '#/components/schemas/Dinero' }
+        mensaje: { type: string, nullable: true, description: '"No se registraron ventas en el periodo consultado" cuando no hubo ventas.' }
+        puntos:
+          type: array
+          items: { $ref: '#/components/schemas/VentaDiariaR' }

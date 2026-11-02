@@ -239,3 +239,20 @@ export interface ReporteDiarioResponse {
   totalPaginasFacturas: number
   facturas: ResumenFacturaResponse[]
 }
+
+// Tendencia de ventas (gráfica de Inicio)
+export interface VentaDiariaResponse {
+  fecha: string // YYYY-MM-DD
+  total: Dinero
+  facturasEmitidas: number
+  unidadesVendidas: number
+}
+
+export interface TendenciaVentasResponse {
+  desde: string // YYYY-MM-DD
+  hasta: string // YYYY-MM-DD
+  dias: number
+  total: Dinero
+  mensaje: string | null
+  puntos: VentaDiariaResponse[]
+}

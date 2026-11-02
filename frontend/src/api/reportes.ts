@@ -1,5 +1,5 @@
 import { apiGet, apiGetPdf } from './client'
-import type { ReporteDiarioResponse } from './domain'
+import type { ReporteDiarioResponse, TendenciaVentasResponse } from './domain'
 
 const consulta = (fecha: string) => `?fecha=${encodeURIComponent(fecha)}`
 
@@ -12,6 +12,14 @@ export function reporteDiario(fecha: string, paginaProductos = 1, paginaFacturas
   params.set('paginaProductos', String(paginaProductos))
   params.set('paginaFacturas', String(paginaFacturas))
   return apiGet<ReporteDiarioResponse>(`/reportes/ventas-diarias?${params.toString()}`)
+}
+
+/**
+ * ADMIN only (T3.5). Ventas por día de los últimos `dias` (1 a 90), terminando hoy en hora de Bogotá.
+ * Devuelve un punto por día, incluidos los días sin ventas en cero.
+ */
+export function tendenciaVentas(dias: number): Promise<TendenciaVentasResponse> {
+  return apiGet<TendenciaVentasResponse>(`/reportes/tendencia-ventas?dias=${dias}`)
 }
 
 export function pdfReporteDiario(fecha: string) {

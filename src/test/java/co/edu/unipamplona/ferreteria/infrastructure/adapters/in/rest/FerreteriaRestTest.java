@@ -177,6 +177,50 @@ public class FerreteriaRestTest {
     }
 
     @Test
+    @DisplayName("T3.5, RF-17: la tendencia de ventas devuelve un punto por día; rango inválido 400 y USER 403")
+    void tendenciaDeVentas() throws Exception {
+        mvc.perform(con(get("/api/reportes/tendencia-ventas?dias=7"), admin(), null))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.dias").value(7))
+                .andExpect(jsonPath("$.puntos.length()").value(7))
+                .andExpect(jsonPath("$.desde").exists())
+                .andExpect(jsonPath("$.hasta").exists())
+                .andExpect(jsonPath("$.total").exists());
+        mvc.perform(con(get("/api/reportes/tendencia-ventas"), admin(), null))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.puntos.length()").value(90));
+        mvc.perform(con(get("/api/reportes/tendencia-ventas?dias=0"), admin(), null))
+                .andExpect(status().isBadRequest());
+        mvc.perform(con(get("/api/reportes/tendencia-ventas?dias=91"), admin(), null))
+                .andExpect(status().isBadRequest());
+        mvc.perform(con(get("/api/reportes/tendencia-ventas?dias=7"), vendedor(), null))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("El seed deja el inicio listo: ventas de hoy, stock bajo y tendencia con datos")
+    void seedRellenaElInicio() throws Exception {
+        mvc.perform(con(post("/api/seed"), admin(), null)).andExpect(status().isCreated());
+
+        LocalDate hoy = LocalDate.now(ZoneId.of("America/Bogota"));
+        mvc.perform(con(get("/api/reportes/ventas-diarias?fecha=" + hoy), admin(), null))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.facturasEmitidas").value(6))
+                .andExpect(jsonPath("$.facturasAnuladas").value(1))
+                .andExpect(jsonPath("$.productos").isNotEmpty());
+
+        mvc.perform(con(get("/api/productos?soloActivos=true&bajoStock=true"), admin(), null))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(6));
+
+        mvc.perform(con(get("/api/reportes/tendencia-ventas?dias=30"), admin(), null))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.puntos.length()").value(30))
+                .andExpect(jsonPath("$.puntos[29].facturasEmitidas").value(6))
+                .andExpect(jsonPath("$.puntos[29].total").isNumber());
+    }
+
+    @Test
     @DisplayName("Una búsqueda sin resultados responde 200 con un mensaje claro, no un error")
     void busquedaSinResultados() throws Exception {
         mvc.perform(con(get("/api/productos?q=zzzz-no-existe"), vendedor(), null))

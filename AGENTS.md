@@ -92,8 +92,10 @@ Reglas:
 - Los contratos de repositorio se prueban contra las dos implementaciones (memoria y JPA).
 - El PDF de la factura se genera al emitir y se publica en Cloudinary (`pdfUrl`). Es best-effort:
   si Cloudinary falla, la venta se completa sin URL y se reintenta al descargar o anular.
-- `POST /api/seed` (ADMIN) reinicia la base y crea 20 facturas; también genera y publica su PDF con
-  la plantilla nueva cuando Cloudinary está configurado.
+- `POST /api/seed` (ADMIN) reinicia la base y crea 20 facturas con las fechas del día de ejecución
+  (hora de Bogotá): 7 de hoy (una anulada), 13 repartidas en los últimos 25 días, 6 productos en stock
+  bajo y compras de hace 40 a 21 días. No hay scheduler: se ejecuta a mano (`./scripts/seed.sh`).
+  También genera y publica el PDF de cada factura cuando Cloudinary está configurado.
 - El total también se imprime en letras con `NumeroALetras`; si cambias el formato monetario, ajusta
   su prueba.
 - `CLOUDINARY_URL` (firmado) o `CLOUDINARY_CLOUD_NAME` + `CLOUDINARY_UPLOAD_PRESET` (unsigned)
@@ -143,7 +145,8 @@ Reglas:
 
 - Estilo "achromatic ledger" (taste-skill, seed 1731905719): fondo piedra, superficies blancas,
   acción primaria casi negra y un solo tono de datos (`--hue`). No introduzcas colores fuera de los
-  tokens.
+  tokens. Excepción deliberada: la gráfica de tendencia de `Inicio` va en escala de grises con
+  `--foreground` (casi negro en claro, casi blanco en oscuro), por pedido explícito.
 - Usa los tokens de `src/index.css` (`--ground`, `--surface`, `--text`, `--muted`, `--border`,
   `--hue`, píldoras de estado...) y las primitivas de `src/components/ui/`.
 - Todas las pantallas usan Tailwind + shadcn, igual que los componentes compartidos `Campo` y
@@ -170,4 +173,4 @@ Reglas:
   `frontend/package.json`).
 - `docs/modelo-datos.md` — modelo de datos.
 - `docs-tecnicos/` — API OpenAPI, matriz de pruebas, respaldo, rendimiento y despliegue en AWS.
-- `scripts/` — generación de `.env`, humo E2E, respaldo/restauración, verificación de secretos.
+- `scripts/` — generación de `.env`, seed de demo, humo E2E, respaldo/restauración, verificación de secretos.

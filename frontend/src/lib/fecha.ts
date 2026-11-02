@@ -13,3 +13,13 @@ const FECHA_LARGA = new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium', time
 export function formatearDia(dia: string): string {
   return FECHA_LARGA.format(new Date(`${dia}T00:00:00Z`))
 }
+
+const FECHA_CORTA = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short', timeZone: 'UTC' })
+
+/**
+ * Short label for chart axes: "30 oct". Anchors the calendar day at UTC midnight, so it never slips to
+ * the previous day in Bogotá the way `new Date("2026-10-30")` does.
+ */
+export function formatearDiaCorto(dia: string): string {
+  return FECHA_CORTA.format(new Date(`${dia}T00:00:00Z`))
+}

@@ -85,8 +85,8 @@ public class BeanConfig {
                             CompraRepositoryPort compras, FacturaRepositoryPort facturas,
                             NumeracionFacturaPort numeracion, DataCleanupPort cleanup,
                             GeneradorPdfPort pdf, AlmacenPdfPort almacenPdf, DatosNegocio negocio,
-                            TransaccionPort transaccion, PoliticaAcceso acceso) {
+                            TransaccionPort transaccion, PoliticaAcceso acceso, Clock reloj) {
         return new SeedService(proveedores, productos, compras, facturas, numeracion, cleanup,
-                pdf, almacenPdf, negocio, transaccion, acceso);
+                pdf, almacenPdf, negocio, transaccion, acceso, reloj);
     }
 }
