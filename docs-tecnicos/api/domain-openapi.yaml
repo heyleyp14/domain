@@ -68,14 +68,14 @@ paths:
           required: false
           description: Texto a buscar en el nombre del proveedor.
           schema: { type: string }
+        - $ref: '#/components/parameters/Pagina'
+        - $ref: '#/components/parameters/Tamano'
       responses:
         '200':
-          description: Proveedores que coinciden (puede ser vacía)
+          description: Página de proveedores que coinciden
           content:
             application/json:
-              schema:
-                type: array
-                items: { $ref: '#/components/schemas/ProveedorR' }
+              schema: { $ref: '#/components/schemas/ProveedoresPagina' }
         '401': { $ref: '#/components/responses/NoAutenticado' }
 
   /api/proveedores/{id}:
@@ -86,6 +86,9 @@ paths:
       summary: Detalle del proveedor con los productos que suministra
       description: "Rol: cualquier usuario autenticado."
       operationId: detalleProveedor
+      parameters:
+        - $ref: '#/components/parameters/Pagina'
+        - $ref: '#/components/parameters/Tamano'
       responses:
         '200':
           description: Detalle del proveedor
@@ -165,6 +168,8 @@ paths:
           required: false
           schema: { type: boolean }
           description: Solo productos con 5 unidades o menos.
+        - $ref: '#/components/parameters/Pagina'
+        - $ref: '#/components/parameters/Tamano'
       responses:
         '200':
           description: Resultado de la búsqueda
@@ -262,6 +267,9 @@ paths:
         empatados tienen `esMenor: true`. Un producto sin compras responde 200 con `ofertas: []` y un
         `mensaje`.
       operationId: compararPrecios
+      parameters:
+        - $ref: '#/components/parameters/Pagina'
+        - $ref: '#/components/parameters/Tamano'
       responses:
         '200':
           description: Comparación de precios
@@ -437,14 +445,14 @@ paths:
           required: false
           description: Código de un producto incluido en la compra.
           schema: { type: string }
+        - $ref: '#/components/parameters/Pagina'
+        - $ref: '#/components/parameters/Tamano'
       responses:
         '200':
-          description: Compras que coinciden (puede ser vacía)
+          description: Página de compras que coinciden
           content:
             application/json:
-              schema:
-                type: array
-                items: { $ref: '#/components/schemas/CompraR' }
+              schema: { $ref: '#/components/schemas/ComprasPagina' }
         '400': { $ref: '#/components/responses/DatosInvalidos' }
         '401': { $ref: '#/components/responses/NoAutenticado' }
         '403': { $ref: '#/components/responses/SinPermiso' }
@@ -483,6 +491,10 @@ paths:
       operationId: reporteDiario
       parameters:
         - $ref: '#/components/parameters/FechaReporte'
+        - $ref: '#/components/parameters/PaginaProductos'
+        - $ref: '#/components/parameters/TamanoProductos'
+        - $ref: '#/components/parameters/PaginaFacturas'
+        - $ref: '#/components/parameters/TamanoFacturas'
       responses:
         '200':
           description: Reporte diario
@@ -545,6 +557,42 @@ components:
       required: true
       description: Día del reporte, AAAA-MM-DD. Si falta o es inválido responde 400.
       schema: { type: string, format: date, example: '2026-10-20' }
+    Pagina:
+      name: pagina
+      in: query
+      required: false
+      description: Página solicitada (1-based). Por defecto 1; menor que 1 responde 400.
+      schema: { type: integer, minimum: 1, default: 1 }
+    Tamano:
+      name: tamano
+      in: query
+      required: false
+      description: Elementos por página (1 a 100). Por defecto 20.
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    PaginaProductos:
+      name: paginaProductos
+      in: query
+      required: false
+      description: Página de la tabla de productos vendidos. Por defecto 1.
+      schema: { type: integer, minimum: 1, default: 1 }
+    TamanoProductos:
+      name: tamanoProductos
+      in: query
+      required: false
+      description: Elementos por página de la tabla de productos vendidos (1 a 100). Por defecto 20.
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    PaginaFacturas:
+      name: paginaFacturas
+      in: query
+      required: false
+      description: Página de la tabla de facturas del día. Por defecto 1.
+      schema: { type: integer, minimum: 1, default: 1 }
+    TamanoFacturas:
+      name: tamanoFacturas
+      in: query
+      required: false
+      description: Elementos por página de la tabla de facturas del día (1 a 100). Por defecto 20.
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
 
   responses:
     DatosInvalidos:
@@ -693,6 +741,9 @@ components:
       properties:
         proveedor: { $ref: '#/components/schemas/ProveedorR' }
         totalProductos: { type: integer }
+        pagina: { type: integer }
+        tamano: { type: integer }
+        totalPaginas: { type: integer }
         productos:
           type: array
           items: { $ref: '#/components/schemas/ProductoResumenR' }
@@ -715,6 +766,9 @@ components:
       type: object
       properties:
         total: { type: integer }
+        pagina: { type: integer }
+        tamano: { type: integer }
+        totalPaginas: { type: integer }
         mensaje: { type: string, nullable: true, description: '"No se encontraron productos" cuando la lista está vacía.' }
         productos:
           type: array
@@ -749,6 +803,10 @@ components:
         anuladaPor: { type: string, nullable: true }
         anuladaEn: { type: string, format: date-time, nullable: true }
         motivoAnulacion: { type: string, nullable: true }
+        pdfUrl:
+          type: string
+          nullable: true
+          description: URL del PDF publicado en Cloudinary. Null si aún no se publicó; se reintenta al descargar el PDF o al anular.
     LineaCompraR:
       type: object
       properties:
@@ -770,6 +828,26 @@ components:
           type: array
           items: { $ref: '#/components/schemas/LineaCompraR' }
         total: { $ref: '#/components/schemas/Dinero' }
+    ProveedoresPagina:
+      type: object
+      properties:
+        total: { type: integer }
+        pagina: { type: integer }
+        tamano: { type: integer }
+        totalPaginas: { type: integer }
+        proveedores:
+          type: array
+          items: { $ref: '#/components/schemas/ProveedorR' }
+    ComprasPagina:
+      type: object
+      properties:
+        total: { type: integer }
+        pagina: { type: integer }
+        tamano: { type: integer }
+        totalPaginas: { type: integer }
+        compras:
+          type: array
+          items: { $ref: '#/components/schemas/CompraR' }
     OfertaR:
       type: object
       properties:
@@ -786,6 +864,10 @@ components:
         codigoProducto: { type: string }
         nombreProducto: { type: string }
         mensaje: { type: string, nullable: true, description: '"Este producto aún no tiene compras registradas" cuando no hay ofertas.' }
+        totalOfertas: { type: integer }
+        pagina: { type: integer }
+        tamano: { type: integer }
+        totalPaginas: { type: integer }
         ofertas:
           type: array
           items: { $ref: '#/components/schemas/OfertaR' }
@@ -818,9 +900,17 @@ components:
         subtotal: { $ref: '#/components/schemas/Dinero' }
         iva: { $ref: '#/components/schemas/Dinero' }
         total: { $ref: '#/components/schemas/Dinero' }
+        productosTotal: { type: integer }
+        paginaProductos: { type: integer }
+        tamanoProductos: { type: integer }
+        totalPaginasProductos: { type: integer }
         productos:
           type: array
           items: { $ref: '#/components/schemas/LineaReporteR' }
+        facturasTotal: { type: integer }
+        paginaFacturas: { type: integer }
+        tamanoFacturas: { type: integer }
+        totalPaginasFacturas: { type: integer }
         facturas:
           type: array
           items: { $ref: '#/components/schemas/ResumenFacturaR' }

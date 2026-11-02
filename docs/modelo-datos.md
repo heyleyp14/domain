@@ -135,6 +135,8 @@ erDiagram
   factura está emitida.
 - `fecha` es el instante de emisión; el reporte diario agrupa por el día de
   Bogotá calculado en la aplicación.
+- `pdf_url` guarda la URL del PDF publicado en Cloudinary. Es nula mientras no
+  se haya podido publicar; se reintenta al descargar el PDF o al anular.
 
 ### `linea_factura`
 

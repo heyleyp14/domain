@@ -43,6 +43,25 @@ npm run lint     # oxlint
 npm run build    # tsc -b && vite build
 ```
 
+### Desarrollo con recarga
+
+Todo corre en Docker con el código montado; no se reconstruyen imágenes por cada cambio.
+
+```bash
+cd domain
+docker compose -f docker-compose.yml -f docker-compose.dev.yml build     # una sola vez
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d     # sin --build
+```
+
+- AuthCore (`docker/authcore.dev.Dockerfile`): `gradle -t classes` + `bootRun` con DevTools inyectado
+  por `docker/authcore-devtools.init.gradle` (no se toca `authcore/build.gradle`).
+- Domain (`docker/domain.dev.Dockerfile`): `mvn compile` al detectar cambios en `src/` o `pom.xml`
+  (`inotifywait`) y reinicio con DevTools; usa PostgreSQL vía las variables del compose.
+- Frontend (`frontend/Dockerfile.dev`): Vite con HMR en http://localhost:8080; el proxy apunta a
+  `http://authcore:8081` y `http://domain:8085` con `VITE_AUTH_TARGET` / `VITE_DOMAIN_TARGET`.
+- Las imágenes de desarrollo (`pi-*-dev`) no pisan las de producción. La primera ejecución descarga
+  dependencias; quedan en volúmenes (`maven-cache`, `gradle-cache`).
+
 ### Sistema completo
 
 ```bash
@@ -57,7 +76,10 @@ Paquete base: `co.edu.unipamplona.ferreteria`.
 
 - `domain/` — modelo y reglas de negocio puras (`Producto`, `Factura`, `Compra`, `Dinero`...).
 - `application/` — casos de uso y puertos.
-- `infrastructure/` — adaptadores REST, persistencia JPA, PDF y seguridad.
+- `infrastructure/` — adaptadores REST, persistencia JPA, PDF (Thymeleaf + openhtmltopdf),
+  almacenamiento (Cloudinary) y seguridad.
+- `src/main/resources/templates/` — plantillas HTML de factura y reporte diario; `fonts/` (Lato +
+  IBM Plex Mono, OFL) e `images/logo.jpg` son los recursos visuales del PDF.
 - `src/test/` — pruebas por capa: `domain`, `application`, `contract`, `infrastructure`,
   `architecture` (ArchUnit) y `testsupport`.
 
@@ -68,6 +90,17 @@ Reglas:
 - El total oficial de una venta lo calcula el servidor, línea a línea (IVA incluido). El cliente solo
   muestra un estimado.
 - Los contratos de repositorio se prueban contra las dos implementaciones (memoria y JPA).
+- El PDF de la factura se genera al emitir y se publica en Cloudinary (`pdfUrl`). Es best-effort:
+  si Cloudinary falla, la venta se completa sin URL y se reintenta al descargar o anular.
+- `POST /api/seed` (ADMIN) reinicia la base y crea 20 facturas; también genera y publica su PDF con
+  la plantilla nueva cuando Cloudinary está configurado.
+- El total también se imprime en letras con `NumeroALetras`; si cambias el formato monetario, ajusta
+  su prueba.
+- `CLOUDINARY_URL` (firmado) o `CLOUDINARY_CLOUD_NAME` + `CLOUDINARY_UPLOAD_PRESET` (unsigned)
+  llegan por entorno y nunca se escriben en `application.yml`.
+- Las listas paginan con `pagina` (1-based) y `tamano` (máx. 100) y devuelven
+  `{ total, pagina, tamano, totalPaginas, ... }`; las tablas embebidas en un documento usan sus propios
+  parámetros (`paginaProductos`, `paginaFacturas`, `paginaOfertas`).
 
 ## Arquitectura del frontend
 
@@ -79,6 +112,8 @@ Reglas:
 - `src/components/Campo.tsx` — envoltorios accesibles para `input`, `select` y `textarea` (label,
   error y `aria-describedby`); úsalos en las pantallas migradas.
 - `src/lib/`, `src/hooks/`, `src/stores/` — utilidades, hooks y estado de UI (Zustand).
+- `usePaginaUrl` mantiene `pagina` y los filtros en la URL; `Paginador` es el pie común de las tablas.
+  Cambiar un filtro vuelve a la página 1 y la página fuera de rango se normaliza a la última válida.
 - Alias de imports: `@/` apunta a `src/`. Úsalo en código nuevo.
 - `src/index.css` contiene los tokens de diseño y estilos globales.
 

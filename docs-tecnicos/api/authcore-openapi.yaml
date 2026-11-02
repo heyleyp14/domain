@@ -41,7 +41,7 @@ paths:
         content:
           application/json:
             schema: { $ref: '#/components/schemas/RegisterRequest' }
-            example: { username: vendedor1, password: '<clave>' }
+            example: { username: vendedor1, password: '<clave>', imageUrl: 'https://res.cloudinary.com/ferreteria-murano3d/image/upload/v1/users/vendedor1.png' }
       responses:
         '201':
           description: Usuario creado
@@ -88,14 +88,23 @@ paths:
       operationId: listarUsuarios
       security:
         - bearerAuth: []
+      parameters:
+        - name: pagina
+          in: query
+          required: false
+          description: Página solicitada (1-based). Por defecto 1; menor que 1 responde 400.
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: tamano
+          in: query
+          required: false
+          description: Usuarios por página (1 a 100). Por defecto 20.
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
       responses:
         '200':
-          description: Usuarios
+          description: Página de usuarios
           content:
             application/json:
-              schema:
-                type: array
-                items: { $ref: '#/components/schemas/UserResponse' }
+              schema: { $ref: '#/components/schemas/UsuariosPagina' }
         '403': { $ref: '#/components/responses/Prohibido' }
 
   /api/auth/users/{id}/roles:
@@ -124,6 +133,58 @@ paths:
         '403': { $ref: '#/components/responses/Prohibido' }
         '404':
           description: El usuario no existe.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /api/auth/me:
+    get:
+      tags: [Perfil]
+      summary: Perfil del usuario autenticado
+      description: Devuelve id, username, roles e imageUrl (Cloudinary). Cualquier usuario autenticado.
+      operationId: miPerfil
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Perfil del usuario del token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserResponse' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+
+  /api/auth/me/image:
+    post:
+      tags: [Perfil]
+      summary: Subir o reemplazar la foto de perfil (Cloudinary)
+      description: >
+        Cualquier usuario autenticado cambia su propia imagen. Acepta multipart/form-data con el
+        campo `archivo` (JPG, PNG o WebP; máximo 2 MB). Si `CLOUDINARY_URL` no está configurado
+        responde 503.
+      operationId: subirMiImagen
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [archivo]
+              properties:
+                archivo:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: URL guardada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ImageResponse' }
+        '400': { $ref: '#/components/responses/Validacion' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '503':
+          description: Cloudinary no está configurado o no respondió.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
@@ -160,11 +221,20 @@ components:
       properties:
         username: { type: string }
         password: { type: string, format: password, minLength: 6 }
+        imageUrl:
+          type: string
+          format: uri
+          maxLength: 512
+          description: Opcional. URL http(s) de la imagen, normalmente de Cloudinary. Si falta, el cliente muestra la inicial del usuario.
     RegisterResponse:
       type: object
       properties:
         id: { type: integer, format: int64 }
         username: { type: string }
+        imageUrl:
+          type: string
+          nullable: true
+          description: URL de la imagen o null si no se envió al registrar.
     LoginRequest:
       type: object
       required: [username, password]
@@ -180,6 +250,10 @@ components:
       required: [role]
       properties:
         role: { $ref: '#/components/schemas/Role' }
+    ImageResponse:
+      type: object
+      properties:
+        imageUrl: { type: string, format: uri }
     UserResponse:
       type: object
       properties:
@@ -188,3 +262,17 @@ components:
         roles:
           type: array
           items: { $ref: '#/components/schemas/Role' }
+        imageUrl:
+          type: string
+          nullable: true
+          description: URL de la imagen o null si el usuario no tiene una.
+    UsuariosPagina:
+      type: object
+      properties:
+        total: { type: integer }
+        pagina: { type: integer }
+        tamano: { type: integer }
+        totalPaginas: { type: integer }
+        usuarios:
+          type: array
+          items: { $ref: '#/components/schemas/UserResponse' }
