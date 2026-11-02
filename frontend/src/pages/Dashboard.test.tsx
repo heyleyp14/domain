@@ -74,6 +74,19 @@ describe('Inicio (T3.5, RF-17)', () => {
     expect(srv.llamadasA('GET /api/reportes/tendencia-ventas')[0].url.searchParams.get('dias')).toBe('90')
   })
 
+  it('vuelve a consultar al regresar a la pestaña, sin recargar a mano', async () => {
+    const srv = servidor()
+    renderApp('/', ADMIN)
+    await screen.findByText('Total del periodo')
+    expect(srv.llamadasA('GET /api/reportes/ventas-diarias')).toHaveLength(1)
+
+    window.dispatchEvent(new Event('focus'))
+
+    await waitFor(() => expect(srv.llamadasA('GET /api/reportes/ventas-diarias')).toHaveLength(2))
+    expect(srv.llamadasA('GET /api/reportes/tendencia-ventas')).toHaveLength(2)
+    expect(srv.llamadasA('GET /api/productos')).toHaveLength(2)
+  })
+
   it('el selector de rango consulta de nuevo el periodo elegido', async () => {
     const srv = servidor()
     renderApp('/', ADMIN)

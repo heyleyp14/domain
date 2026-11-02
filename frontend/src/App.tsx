@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider, PrivateRoute } from './auth/AuthContext'
 import { Layout } from './components/Layout'
 import { Login } from './pages/Login'
@@ -41,6 +41,8 @@ export function AppRoutes() {
         <Route path="/reporte" element={<SoloAdmin><ReporteDiario /></SoloAdmin>} />
         <Route path="/usuarios" element={<SoloAdmin><Usuarios /></SoloAdmin>} />
       </Route>
+      {/* Cualquier URL desconocida vuelve a Inicio en vez de dejar la pantalla en blanco. */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { buscarProductos } from '../api/catalogo'
 import type { BusquedaProductosResponse, ReporteDiarioResponse, TendenciaVentasResponse, VentaDiariaResponse } from '../api/domain'
@@ -37,7 +37,26 @@ export function Dashboard() {
   const [stock, setStock] = useState<Resultado<BusquedaProductosResponse>>(null)
   const [hoy, setHoy] = useState<Resultado<ReporteDiarioResponse>>(null)
   const [serie, setSerie] = useState<ResultadoSerie>(null)
+  const [revision, setRevision] = useState(0)
   const [fecha] = useState(() => DIA.format(new Date()).replace(/^./, c => c.toUpperCase()))
+
+  // Volver a la pestaña después de correr el seed debe mostrar los datos nuevos, sin recargar a mano.
+  const ultimoRefresco = useRef(0)
+  useEffect(() => {
+    const refrescar = () => {
+      if (document.visibilityState !== 'visible') return
+      const ahora = Date.now()
+      if (ahora - ultimoRefresco.current < 1000) return
+      ultimoRefresco.current = ahora
+      setRevision(r => r + 1)
+    }
+    window.addEventListener('visibilitychange', refrescar)
+    window.addEventListener('focus', refrescar)
+    return () => {
+      window.removeEventListener('visibilitychange', refrescar)
+      window.removeEventListener('focus', refrescar)
+    }
+  }, [])
 
   useEffect(() => {
     let vigente = true
@@ -47,7 +66,7 @@ export function Dashboard() {
     return () => {
       vigente = false
     }
-  }, [])
+  }, [revision])
 
   useEffect(() => {
     if (!esAdmin) return
@@ -58,7 +77,7 @@ export function Dashboard() {
     return () => {
       vigente = false
     }
-  }, [esAdmin])
+  }, [esAdmin, revision])
 
   useEffect(() => {
     if (!esAdmin) return
@@ -69,7 +88,7 @@ export function Dashboard() {
     return () => {
       vigente = false
     }
-  }, [esAdmin, dias])
+  }, [esAdmin, dias, revision])
 
   const bajos = [...(stock?.datos?.productos ?? [])].sort((a, b) => a.stock - b.stock)
   const totalBajos = stock?.datos?.total ?? 0
@@ -214,6 +233,7 @@ export function Dashboard() {
                         strokeWidth={2}
                         dot={false}
                         activeDot={{ r: 4 }}
+                        isAnimationActive={false}
                       />
                     </AreaChart>
                   </ResponsiveContainer>
