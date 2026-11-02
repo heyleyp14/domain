@@ -7,9 +7,12 @@ import { BuscadorProductos } from '../components/BuscadorProductos'
 import { CampoTexto } from '../components/Campo'
 import { FacturaDetalle } from '../components/FacturaDetalle'
 import { MensajeError } from '../components/FormFields'
+import { Paginador } from '../components/Paginador'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
+import { usePaginaUrl } from '../hooks/usePaginaUrl'
 import { formatearPesos } from '../lib/formato'
+import { TAMANO_PAGINA, paginaValida } from '../lib/paginacion'
 import {
   ETIQUETAS_VENTA, erroresDesdeServidor, hayErrores, validarCliente,
   type CampoCliente, type ErroresCampo, type FormCliente,
@@ -52,7 +55,12 @@ export function PuntoVenta() {
   const [error, setError] = useState<{ mensaje: string; detalles: string[] } | null>(null)
   const [enviando, setEnviando] = useState(false)
   const [factura, setFactura] = useState<FacturaResponse | null>(null)
+  const [paginaFactura, setPaginaFactura] = useState(1)
+  const { pagina: paginaCarrito, irAPagina: irACarrito } = usePaginaUrl('paginaCarrito')
   const totalEstimado = useMemo(() => estimar(carrito), [carrito])
+  const totalPaginasCarrito = Math.max(Math.ceil(carrito.length / TAMANO_PAGINA), 1)
+  const paginaCarritoActual = paginaValida(paginaCarrito, totalPaginasCarrito)
+  const carritoVisible = carrito.slice((paginaCarritoActual - 1) * TAMANO_PAGINA, paginaCarritoActual * TAMANO_PAGINA)
   const enCurso = useRef(false) // blocks a double click before React re-renders the disabled button
 
   const agregar = (p: ProductoResponse) => {
@@ -123,14 +131,17 @@ export function PuntoVenta() {
     setCarrito([])
     setError(null)
     setErrores({})
+    irACarrito(1, true)
   }
 
   const nuevaVenta = () => {
     setFactura(null)
+    setPaginaFactura(1)
     setCarrito([])
     setCliente(CLIENTE_VACIO)
     setErrores({})
     setError(null)
+    irACarrito(1, true)
   }
 
   if (factura) {
@@ -141,6 +152,8 @@ export function PuntoVenta() {
         </p>
         <FacturaDetalle
           factura={factura}
+          pagina={paginaFactura}
+          onCambiarPagina={setPaginaFactura}
           acciones={<Button type="button" variant="secondary" onClick={nuevaVenta} autoFocus>Nueva venta</Button>}
         />
       </section>
@@ -194,7 +207,7 @@ export function PuntoVenta() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {carrito.map(l => {
+                    {carritoVisible.map(l => {
                       const excede = l.cantidad > l.producto.stock
                       const subtotal = Math.round(l.producto.precioFinal * 100) * l.cantidad / 100
                       return (
@@ -247,6 +260,18 @@ export function PuntoVenta() {
                     })}
                   </tbody>
                 </table>
+              </div>
+            )}
+
+            {carrito.length > 0 && (
+              <div className="px-4 py-2">
+                <Paginador
+                  pagina={paginaCarritoActual}
+                  totalPaginas={totalPaginasCarrito}
+                  total={carrito.length}
+                  etiqueta={carrito.length === 1 ? 'línea' : 'líneas'}
+                  onCambiar={irACarrito}
+                />
               </div>
             )}
 

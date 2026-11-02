@@ -1,12 +1,15 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { ApiError } from '../api/client'
-import type { UserResponse } from '../api/auth'
+import type { UserResponse, UsuariosResponse } from '../api/auth'
 import { agregarRol, crearUsuario, listarUsuarios } from '../api/usuarios'
 import { useAuth } from '../auth/useAuth'
 import { CampoTexto } from '../components/Campo'
 import { Confirmacion } from '../components/Confirmacion'
 import { MensajeError } from '../components/FormFields'
+import { Paginador } from '../components/Paginador'
 import { Button } from '../components/ui/button'
+import { usePaginaUrl } from '../hooks/usePaginaUrl'
+import { paginaValida } from '../lib/paginacion'
 
 interface ErroresUsuario {
   username?: string
@@ -90,24 +93,34 @@ function CrearUsuario({ onCreado }: { onCreado: (username: string) => void }) {
 /** Users and roles (HU-1, HU-3), ADMIN only: the route is wrapped in <SoloAdmin>. */
 export function Usuarios() {
   const { user } = useAuth()
+  const { pagina, irAPagina } = usePaginaUrl('pagina')
   const [version, setVersion] = useState(0)
-  const [respuesta, setRespuesta] = useState<{ version: number; usuarios?: UserResponse[]; error?: string } | null>(null)
+  const [respuesta, setRespuesta] = useState<{ clave: string; r?: UsuariosResponse; error?: string } | null>(null)
   const [porPromover, setPorPromover] = useState<UserResponse | null>(null)
   const [ocupado, setOcupado] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
+  const clave = JSON.stringify([pagina, version])
 
   useEffect(() => {
     let vigente = true
-    listarUsuarios()
-      .then(usuarios => vigente && setRespuesta({ version, usuarios }))
-      .catch(e => vigente && setRespuesta({ version, error: e instanceof Error ? e.message : 'No se pudieron cargar los usuarios' }))
+    listarUsuarios(pagina)
+      .then(r => vigente && setRespuesta({ clave, r }))
+      .catch(e => vigente && setRespuesta({ clave, error: e instanceof Error ? e.message : 'No se pudieron cargar los usuarios' }))
     return () => {
       vigente = false
     }
-  }, [version])
+  }, [clave, pagina])
 
-  const actual = respuesta?.version === version ? respuesta : null
+  const actual = respuesta?.clave === clave ? respuesta : null
+  const resultado = actual?.r ?? null
+  const usuarios = resultado?.usuarios ?? []
+
+  useEffect(() => {
+    if (!resultado || resultado.totalPaginas === 0) return
+    const valida = paginaValida(pagina, resultado.totalPaginas)
+    if (valida !== pagina) irAPagina(valida, true)
+  }, [resultado, pagina, irAPagina])
 
   const promover = async (u: UserResponse) => {
     setOcupado(true)
@@ -137,7 +150,11 @@ export function Usuarios() {
         </p>
       )}
 
-      <CrearUsuario onCreado={username => { setAviso(`Usuario ${username} creado con el rol USER`); setVersion(v => v + 1) }} />
+      <CrearUsuario onCreado={username => {
+        setAviso(`Usuario ${username} creado con el rol USER`)
+        setVersion(v => v + 1)
+        irAPagina(1, true)
+      }} />
 
       {porPromover && (
         <Confirmacion titulo={`¿Hacer administrador a ${porPromover.username}?`} confirmar="Hacer administrador" ocupado={ocupado}
@@ -154,7 +171,10 @@ export function Usuarios() {
         <MensajeError mensaje={error ?? actual?.error ?? null} />
         {!actual && <div className="skeleton h-40 w-full" aria-hidden="true" />}
 
-        {actual?.usuarios && (
+        {resultado && usuarios.length === 0 && (
+          <p className="text-sm text-muted-foreground">No hay usuarios en esta página.</p>
+        )}
+        {usuarios.length > 0 && (
           <div className="overflow-x-auto rounded-lg border border-border">
             <table aria-label="Usuarios registrados" className="w-full text-sm">
               <thead className="bg-muted/50 text-muted-foreground">
@@ -165,7 +185,7 @@ export function Usuarios() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {actual.usuarios.map(u => (
+                {usuarios.map(u => (
                   <tr key={u.id}>
                     <td className="px-3 py-2 font-medium">{u.username}{u.username === user?.username && ' (usted)'}</td>
                     <td className="px-3 py-2">
@@ -192,6 +212,15 @@ export function Usuarios() {
               </tbody>
             </table>
           </div>
+        )}
+        {resultado && usuarios.length > 0 && (
+          <Paginador
+            pagina={resultado.pagina}
+            totalPaginas={resultado.totalPaginas}
+            total={resultado.total}
+            etiqueta={resultado.total === 1 ? 'usuario' : 'usuarios'}
+            onCambiar={irAPagina}
+          />
         )}
       </section>
     </section>

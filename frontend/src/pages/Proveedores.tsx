@@ -1,14 +1,17 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { ApiError } from '../api/client'
 import { crearProveedor, editarProveedor, listarProveedores, obtenerProveedor } from '../api/catalogo'
-import type { ProveedorDetalleResponse, ProveedorResponse } from '../api/domain'
+import type { ProveedorDetalleResponse, ProveedorResponse, ProveedoresResponse } from '../api/domain'
 import { useAuth } from '../auth/useAuth'
 import { CampoTexto } from '../components/Campo'
 import { MensajeError } from '../components/FormFields'
+import { Paginador } from '../components/Paginador'
 import { Button } from '../components/ui/button'
 import { Card } from '../components/ui/card'
 import { useDebounce } from '../hooks/useDebounce'
+import { usePaginaUrl } from '../hooks/usePaginaUrl'
 import { formatearPesos } from '../lib/formato'
+import { TAMANO_PAGINA, paginaValida } from '../lib/paginacion'
 import {
   ETIQUETAS_PROVEEDOR, erroresDesdeServidor, hayErrores, validarProveedor,
   type CampoProveedor, type ErroresCampo, type FormProveedor,
@@ -87,7 +90,11 @@ function ProveedorFormulario({ proveedor, onGuardado, onCancelar }: {
   )
 }
 
-function DetalleProveedor({ detalle, onCerrar }: { detalle: ProveedorDetalleResponse; onCerrar: () => void }) {
+function DetalleProveedor({ detalle, onCerrar, onCambiarPagina }: {
+  detalle: ProveedorDetalleResponse
+  onCerrar: () => void
+  onCambiarPagina: (pagina: number) => void
+}) {
   const p = detalle.proveedor
   return (
     <Card role="region" aria-label={`Detalle de ${p.nombre}`} className="flex flex-col gap-4 p-4">
@@ -138,6 +145,13 @@ function DetalleProveedor({ detalle, onCerrar }: { detalle: ProveedorDetalleResp
             </table>
           </div>
         )}
+        <Paginador
+          pagina={detalle.pagina}
+          totalPaginas={detalle.totalPaginas}
+          total={detalle.totalProductos}
+          etiqueta={detalle.totalProductos === 1 ? 'producto' : 'productos'}
+          onCambiar={onCambiarPagina}
+        />
       </div>
     </Card>
   )
@@ -149,42 +163,86 @@ type Edicion = { modo: 'nuevo' } | { modo: 'editar'; proveedor: ProveedorRespons
 export function Proveedores() {
   const { hasRole } = useAuth()
   const esAdmin = hasRole('ADMIN')
-  const [texto, setTexto] = useState('')
+  const { params, pagina, actualizar, irAPagina } = usePaginaUrl('pagina')
+  const qUrl = params.get('q') ?? ''
+  const [texto, setTexto] = useState(qUrl)
   const q = useDebounce(texto.trim(), 300)
+  const proveedorId = Number(params.get('proveedor')) || null
+  const productosPagina = Math.max(Number(params.get('productosPagina')) || 1, 1)
   const [version, setVersion] = useState(0)
-  const [respuesta, setRespuesta] = useState<{ clave: string; lista?: ProveedorResponse[]; error?: string } | null>(null)
+  const [respuesta, setRespuesta] = useState<{ clave: string; r?: ProveedoresResponse; error?: string } | null>(null)
   const [detalle, setDetalle] = useState<ProveedorDetalleResponse | null>(null)
   const [edicion, setEdicion] = useState<Edicion>(null)
   const [error, setError] = useState<string | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
   const detalleRef = useRef<HTMLDivElement>(null)
-  const clave = JSON.stringify([q, version])
+  const clave = JSON.stringify([q, pagina, version])
+  const ultimoQ = useRef(qUrl)
+
+  useEffect(() => {
+    setTexto(qUrl)
+  }, [qUrl])
+
+  useEffect(() => {
+    if (q === ultimoQ.current) return
+    ultimoQ.current = q
+    actualizar({ q: q || null, pagina: null }, true)
+  }, [q, actualizar])
 
   useEffect(() => {
     let vigente = true
-    listarProveedores(q)
-      .then(lista => vigente && setRespuesta({ clave, lista }))
+    listarProveedores(q, pagina, TAMANO_PAGINA)
+      .then(r => vigente && setRespuesta({ clave, r }))
       .catch(e => vigente && setRespuesta({ clave, error: e instanceof Error ? e.message : 'No se pudieron cargar los proveedores' }))
     return () => {
       vigente = false
     }
-  }, [clave, q])
+  }, [clave, q, pagina])
 
   const actual = respuesta?.clave === clave ? respuesta : null
-  const lista = actual?.lista ?? null
+  const resultado = actual?.r ?? null
+  const lista = resultado?.proveedores ?? null
+
+  useEffect(() => {
+    if (!resultado || resultado.totalPaginas === 0) return
+    const valida = paginaValida(pagina, resultado.totalPaginas)
+    if (valida !== pagina) irAPagina(valida, true)
+  }, [resultado, pagina, irAPagina])
+
+  useEffect(() => {
+    if (!proveedorId) {
+      setDetalle(null)
+      return
+    }
+    let vigente = true
+    obtenerProveedor(proveedorId, productosPagina)
+      .then(d => {
+        if (!vigente) return
+        setDetalle(d)
+        if (d.totalPaginas > 0 && productosPagina > d.totalPaginas) {
+          actualizar({ productosPagina: d.totalPaginas <= 1 ? null : d.totalPaginas }, true)
+        }
+      })
+      .catch(e => {
+        if (!vigente) return
+        setDetalle(null)
+        setError(e instanceof Error ? e.message : 'No se pudo cargar el proveedor')
+      })
+    return () => {
+      vigente = false
+    }
+  }, [proveedorId, productosPagina, version, actualizar])
 
   useEffect(() => {
     if (detalle) detalleRef.current?.scrollIntoView?.({ block: 'start' })
   }, [detalle])
 
-  const verDetalle = async (id: number) => {
+  const verDetalle = (id: number) => {
     setError(null)
-    try {
-      setDetalle(await obtenerProveedor(id))
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'No se pudo cargar el proveedor')
-    }
+    actualizar({ proveedor: id, productosPagina: null })
   }
+
+  const cerrarDetalle = () => actualizar({ proveedor: null, productosPagina: null })
 
   const alGuardar = (p: ProveedorResponse) => {
     setEdicion(null)
@@ -230,7 +288,11 @@ export function Proveedores() {
 
       {detalle && (
         <div ref={detalleRef}>
-          <DetalleProveedor detalle={detalle} onCerrar={() => setDetalle(null)} />
+          <DetalleProveedor
+            detalle={detalle}
+            onCerrar={cerrarDetalle}
+            onCambiarPagina={n => actualizar({ productosPagina: n <= 1 ? null : n })}
+          />
         </div>
       )}
 
@@ -276,6 +338,15 @@ export function Proveedores() {
             </tbody>
           </table>
         </div>
+      )}
+      {resultado && lista && lista.length > 0 && (
+        <Paginador
+          pagina={resultado.pagina}
+          totalPaginas={resultado.totalPaginas}
+          total={resultado.total}
+          etiqueta={resultado.total === 1 ? 'proveedor' : 'proveedores'}
+          onCambiar={irAPagina}
+        />
       )}
     </section>
   )

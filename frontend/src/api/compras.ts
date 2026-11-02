@@ -1,5 +1,5 @@
 import { apiGet, apiPost } from './client'
-import type { CompraRequest, CompraResponse } from './domain'
+import type { CompraRequest, CompraResponse, ComprasResponse } from './domain'
 
 export interface FiltrosCompras {
   proveedorId?: string
@@ -15,14 +15,14 @@ export function registrarCompra(data: CompraRequest): Promise<CompraResponse> {
   return apiPost<CompraResponse>('/compras', data)
 }
 
-/** GET /api/compras with optional filters; newest first. */
-export function listarCompras(filtros: FiltrosCompras = {}): Promise<CompraResponse[]> {
+/** GET /api/compras con filtros opcionales; primero las más recientes, en páginas. */
+export function listarCompras(filtros: FiltrosCompras = {}, pagina = 1): Promise<ComprasResponse> {
   const params = new URLSearchParams()
   for (const [clave, valor] of Object.entries(filtros)) {
     if (valor?.trim()) params.set(clave, valor.trim())
   }
-  const consulta = params.toString()
-  return apiGet<CompraResponse[]>(`/compras${consulta ? `?${consulta}` : ''}`)
+  params.set('pagina', String(pagina))
+  return apiGet<ComprasResponse>(`/compras?${params.toString()}`)
 }
 
 export function obtenerCompra(codigo: string): Promise<CompraResponse> {

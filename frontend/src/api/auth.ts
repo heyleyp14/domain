@@ -4,11 +4,13 @@
 export interface RegisterRequest {
   username: string
   password: string
+  imageUrl?: string
 }
 
 export interface RegisterResponse {
   id: number
   username: string
+  imageUrl?: string | null
 }
 
 export interface LoginRequest {
@@ -30,4 +32,14 @@ export interface UserResponse {
   id: number
   username: string
   roles: Role[]
+  /** URL de Cloudinary; null o ausente cuando el usuario no ha subido imagen. */
+  imageUrl?: string | null
+}
+
+export interface UsuariosResponse {
+  total: number
+  pagina: number
+  tamano: number
+  totalPaginas: number
+  usuarios: UserResponse[]
 }

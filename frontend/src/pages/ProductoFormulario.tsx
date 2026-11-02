@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { ApiError } from '../api/client'
-import { crearProducto, editarProducto, listarProveedores } from '../api/catalogo'
+import { crearProducto, editarProducto, listarTodosProveedores } from '../api/catalogo'
 import type { ProductoResponse, ProveedorResponse } from '../api/domain'
 import { CampoSelect, CampoTexto } from '../components/Campo'
 import { MensajeError } from '../components/FormFields'
@@ -39,7 +39,7 @@ export function ProductoFormulario({ producto, onGuardado, onCancelar }: Props) 
   const [guardando, setGuardando] = useState(false)
 
   useEffect(() => {
-    listarProveedores()
+    listarTodosProveedores()
       .then(setProveedores)
       .catch(e => setErrorGeneral(e instanceof Error ? e.message : 'No se pudieron cargar los proveedores'))
   }, [])

@@ -2,25 +2,25 @@ import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { renderApp, tokenDePrueba } from '../test/utilidades'
-import { busqueda, json, producto, proveedor, servidorFalso } from '../test/servidor'
+import { busqueda, json, pagina, producto, proveedor, servidorFalso } from '../test/servidor'
 
 const ADMIN = tokenDePrueba({ sub: 'admin', roles: ['USER', 'ADMIN'] })
 const USER = tokenDePrueba({ roles: ['USER'] })
 const buscador = () => screen.getByLabelText('Buscar por código, nombre o proveedor')
 
 describe('Productos: búsqueda (T3.3, RF-07, RF-06)', () => {
-  it('con menos de 2 caracteres no consulta; al escribir rápido consulta una sola vez', async () => {
+  it('consulta una sola vez con el texto debounced y envía la página', async () => {
     const srv = servidorFalso({ 'GET /api/productos': json(200, busqueda([producto('MAR-01')])) })
     renderApp('/productos', USER)
 
-    await userEvent.type(buscador(), 'm')
-    expect(screen.getByText(/al menos 2 caracteres/)).toBeInTheDocument()
-    await userEvent.type(buscador(), 'artillo')
-
+    await userEvent.type(buscador(), 'martillo')
     expect(await screen.findByText('MAR-01')).toBeInTheDocument()
-    const consultas = srv.llamadasA('GET /api/productos')
-    expect(consultas).toHaveLength(1)
-    expect(consultas[0].url.searchParams.get('q')).toBe('martillo')
+
+    await waitFor(() => {
+      const conTexto = srv.llamadasA('GET /api/productos').filter(c => c.url.searchParams.get('q') === 'martillo')
+      expect(conTexto).toHaveLength(1)
+      expect(conTexto[0].url.searchParams.get('pagina')).toBe('1')
+    })
   })
 
   it('muestra precio base, IVA, precio final del servidor y el distintivo de stock bajo', async () => {
@@ -31,7 +31,6 @@ describe('Productos: búsqueda (T3.3, RF-07, RF-06)', () => {
       ])),
     })
     renderApp('/productos', USER)
-    await userEvent.type(buscador(), 'ma')
 
     const fila = (await screen.findByText('MAR-01')).closest('tr')!
     expect(within(fila).getByText(/29\.750,00/)).toBeInTheDocument()
@@ -49,32 +48,63 @@ describe('Productos: búsqueda (T3.3, RF-07, RF-06)', () => {
     expect(await screen.findByText('No se encontraron productos')).toBeInTheDocument()
   })
 
+  it('carga el catálogo al entrar y el filtro de stock bajo consulta al servidor', async () => {
+    const srv = servidorFalso({ 'GET /api/productos': json(200, busqueda([producto('MAR-01', { stockBajo: true })])) })
+    renderApp('/productos', USER)
+
+    expect(await screen.findByText('MAR-01')).toBeInTheDocument()
+    await userEvent.click(screen.getByLabelText('Solo stock bajo'))
+
+    await waitFor(() => expect(srv.llamadasA('GET /api/productos').at(-1)!.url.searchParams.get('bajoStock')).toBe('true'))
+  })
+
+  it('sin resultados permite limpiar la búsqueda y volver al catálogo', async () => {
+    servidorFalso({
+      'GET /api/productos': url => json(200, busqueda(url.searchParams.get('q') === 'zzz' ? [] : [producto('MAR-01')]))(),
+    })
+    renderApp('/productos', USER)
+    await userEvent.type(buscador(), 'zzz')
+
+    expect(await screen.findByText('No se encontraron productos')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Limpiar búsqueda y filtros' }))
+
+    await waitFor(() => expect(buscador()).toHaveValue(''))
+    expect(await screen.findByText('MAR-01')).toBeInTheDocument()
+  })
+
   it('los filtros consultan aunque no haya texto, y se envían al servidor', async () => {
     const srv = servidorFalso({ 'GET /api/productos': json(200, busqueda([producto('MAR-01', { stockBajo: true })])) })
     renderApp('/productos', USER)
     await userEvent.click(screen.getByLabelText('Solo stock bajo'))
     expect(await screen.findByText('MAR-01')).toBeInTheDocument()
-    expect(srv.llamadasA('GET /api/productos')[0].url.searchParams.get('bajoStock')).toBe('true')
+    await waitFor(() => expect(srv.llamadasA('GET /api/productos').at(-1)!.url.searchParams.get('bajoStock')).toBe('true'))
   })
 
-  it('muestra los primeros 50 resultados y "Ver más" agrega los siguientes', async () => {
-    const muchos = Array.from({ length: 60 }, (_, i) => producto(`P-${String(i).padStart(3, '0')}`))
-    servidorFalso({ 'GET /api/productos': json(200, busqueda(muchos)) })
+  it('pagina desde la URL: Siguiente pide la página 2 al servidor', async () => {
+    const pagina1 = Array.from({ length: 20 }, (_, i) => producto(`P-${String(i).padStart(3, '0')}`))
+    const pagina2 = [producto('P-020')]
+    const srv = servidorFalso({
+      'GET /api/productos': url => {
+        const p = url.searchParams.get('pagina') ?? '1'
+        const cuerpo = p === '2'
+          ? { total: 21, pagina: 2, tamano: 20, totalPaginas: 2, mensaje: null, productos: pagina2 }
+          : { total: 21, pagina: 1, tamano: 20, totalPaginas: 2, mensaje: null, productos: pagina1 }
+        return json(200, cuerpo)()
+      },
+    })
     renderApp('/productos', USER)
-    await userEvent.type(buscador(), 'p-')
 
-    await screen.findByText('P-000')
-    expect(screen.getAllByRole('row')).toHaveLength(51) // header + 50
-    expect(screen.queryByText('P-055')).not.toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Ver más' }))
-    expect(screen.getAllByRole('row')).toHaveLength(61)
-    expect(screen.queryByRole('button', { name: 'Ver más' })).not.toBeInTheDocument()
+    expect(await screen.findByText('P-000')).toBeInTheDocument()
+    expect(screen.getByText('Página 1 de 2')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
+
+    expect(await screen.findByText('P-020')).toBeInTheDocument()
+    expect(srv.llamadasA('GET /api/productos').at(-1)!.url.searchParams.get('pagina')).toBe('2')
   })
 
   it('un USER no ve las acciones de administración', async () => {
     servidorFalso({ 'GET /api/productos': json(200, busqueda([producto('MAR-01')])) })
     renderApp('/productos', USER)
-    await userEvent.type(buscador(), 'ma')
     await screen.findByText('MAR-01')
     expect(screen.queryByRole('button', { name: 'Nuevo producto' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Editar' })).not.toBeInTheDocument()
@@ -83,7 +113,7 @@ describe('Productos: búsqueda (T3.3, RF-07, RF-06)', () => {
 })
 
 describe('Productos: crear, editar y desactivar (T3.3, RF-04, RF-08, RF-09)', () => {
-  const proveedores = json(200, [proveedor(1, 'Distribuidora Andina'), proveedor(2, 'Ferremax')])
+  const proveedores = json(200, pagina('proveedores', [proveedor(1, 'Distribuidora Andina'), proveedor(2, 'Ferremax')]))
 
   async function abrirNuevo() {
     await userEvent.click(screen.getByRole('button', { name: 'Nuevo producto' }))
@@ -119,7 +149,7 @@ describe('Productos: crear, editar y desactivar (T3.3, RF-04, RF-08, RF-09)', ()
   })
 
   it('con datos inválidos marca cada campo y no envía nada al servidor', async () => {
-    const srv = servidorFalso({ 'GET /api/proveedores': proveedores })
+    const srv = servidorFalso({ 'GET /api/proveedores': proveedores, 'GET /api/productos': json(200, busqueda([])) })
     renderApp('/productos', ADMIN)
     const form = await abrirNuevo()
     await userEvent.type(within(form).getByLabelText('Código'), 'x')
@@ -136,6 +166,7 @@ describe('Productos: crear, editar y desactivar (T3.3, RF-04, RF-08, RF-09)', ()
   it('un 400 del servidor con varios campos faltantes marca cada uno', async () => {
     servidorFalso({
       'GET /api/proveedores': proveedores,
+      'GET /api/productos': json(200, busqueda([])),
       'POST /api/productos': json(400, { status: 400, mensaje: 'Faltan campos obligatorios: nombre, precio', detalles: [] }),
     })
     renderApp('/productos', ADMIN)
@@ -151,6 +182,7 @@ describe('Productos: crear, editar y desactivar (T3.3, RF-04, RF-08, RF-09)', ()
   it('el 409 de código repetido aparece junto al campo código', async () => {
     servidorFalso({
       'GET /api/proveedores': proveedores,
+      'GET /api/productos': json(200, busqueda([])),
       'POST /api/productos': json(409, { status: 409, mensaje: 'Ya existe un producto con el código «MAR-02»', detalles: [] }),
     })
     renderApp('/productos', ADMIN)

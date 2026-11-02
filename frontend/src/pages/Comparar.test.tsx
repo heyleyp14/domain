@@ -29,12 +29,13 @@ describe('Comparar precios (T3.7, HU-11, RF-19)', () => {
     const srv = servidorFalso({})
     renderApp('/comparar', ADMIN)
     expect(screen.getByText(/Elige un producto para comparar/)).toBeInTheDocument()
-    expect(srv.llamadas).toHaveLength(0)
+    expect(srv.llamadasDePantalla()).toHaveLength(0)
   })
 
   it('muestra cada proveedor con su precio vigente, histórico, fecha y compras, y marca el menor', async () => {
     const srv = servidor({
       codigoProducto: 'MAR-01', nombreProducto: 'Martillo de uña', mensaje: null,
+      totalOfertas: 2, pagina: 1, tamano: 20, totalPaginas: 1,
       ofertas: [
         oferta(2, 'Ferremax', 17500, { esMenor: true, menorPrecioHistorico: 16000, compras: 3, fechaUltimaCompra: '2026-10-28' }),
         oferta(1, 'Distribuidora Andina', 18000),
@@ -59,6 +60,7 @@ describe('Comparar precios (T3.7, HU-11, RF-19)', () => {
   it('con un empate marca a todos los proveedores empatados', async () => {
     servidor({
       codigoProducto: 'MAR-01', nombreProducto: 'Martillo de uña', mensaje: null,
+      totalOfertas: 3, pagina: 1, tamano: 20, totalPaginas: 1,
       ofertas: [oferta(1, 'Andina', 17500, { esMenor: true }), oferta(2, 'Ferremax', 17500, { esMenor: true }), oferta(3, 'Otro', 19000)],
     })
     renderApp('/comparar', ADMIN)
@@ -70,7 +72,7 @@ describe('Comparar precios (T3.7, HU-11, RF-19)', () => {
   })
 
   it('un producto sin compras muestra el mensaje del servidor, no un error', async () => {
-    servidor({ codigoProducto: 'MAR-01', nombreProducto: 'Martillo de uña', mensaje: 'Este producto aún no tiene compras registradas', ofertas: [] })
+    servidor({ codigoProducto: 'MAR-01', nombreProducto: 'Martillo de uña', mensaje: 'Este producto aún no tiene compras registradas', totalOfertas: 0, pagina: 1, tamano: 20, totalPaginas: 0, ofertas: [] })
     renderApp('/comparar', ADMIN)
     await elegir()
     const region = await screen.findByRole('region', { name: 'Comparación de MAR-01' })

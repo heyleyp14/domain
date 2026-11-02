@@ -10,6 +10,7 @@ import { FacturaDetalle } from '../components/FacturaDetalle'
 import { MensajeError } from '../components/FormFields'
 import { Button } from '../components/ui/button'
 import { Card } from '../components/ui/card'
+import { usePaginaUrl } from '../hooks/usePaginaUrl'
 
 const NUMERO = /^FAC-\d{4}-\d{6}$/
 
@@ -74,6 +75,7 @@ export function Facturas() {
   const { hasRole } = useAuth()
   const esAdmin = hasRole('ADMIN')
   const [params, setParams] = useSearchParams()
+  const lineasPag = usePaginaUrl('paginaLineas')
   const numero = (params.get('numero') ?? '').trim().toUpperCase()
 
   const [texto, setTexto] = useState(numero)
@@ -182,6 +184,8 @@ export function Facturas() {
       {factura && (
         <FacturaDetalle
           factura={factura}
+          pagina={lineasPag.pagina}
+          onCambiarPagina={n => lineasPag.irAPagina(n)}
           acciones={esAdmin && factura.estado === 'EMITIDA' && !anulando && (
             <Button type="button" variant="destructive" onClick={() => { setAviso(null); setAnulando(true) }}>
               Anular factura

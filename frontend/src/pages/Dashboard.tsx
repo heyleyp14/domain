@@ -46,7 +46,7 @@ export function Dashboard() {
 
   useEffect(() => {
     let vigente = true
-    buscarProductos({ soloActivos: true, bajoStock: true })
+    buscarProductos({ soloActivos: true, bajoStock: true, pagina: 1, tamano: MAXIMO_STOCK_BAJO })
       .then(datos => vigente && setStock({ datos }))
       .catch(e => vigente && setStock({ error: e instanceof Error ? e.message : 'No se pudo consultar el stock' }))
     if (esAdmin) {
@@ -64,6 +64,7 @@ export function Dashboard() {
     { codigo: 'P011', nombre: 'Pintura Azul', stock: 2, proveedorNombre: 'Proveedor B' },
     { codigo: 'P012', nombre: 'Brocha 3"', stock: 1, proveedorNombre: 'Proveedor C' },
   ])].sort((a, b) => a.stock - b.stock)
+  const totalBajos = stock?.datos?.total ?? bajos.length
   const reporte = hoy?.datos ?? {
     total: 1250000,
     facturasEmitidas: 8,
@@ -209,7 +210,7 @@ export function Dashboard() {
             <h2 id="titulo-stock" className="text-lg font-semibold">Stock bajo</h2>
             {bajos.length > 0 && (
               <Button asChild variant="outline" size="default" className="min-h-[44px]">
-                <Link to="/productos" className="!text-foreground">{bajos.length > MAXIMO_STOCK_BAJO ? `Ver los ${bajos.length}` : 'Ir al catálogo'}</Link>
+                <Link to="/productos" className="!text-foreground">{totalBajos > MAXIMO_STOCK_BAJO ? `Ver los ${totalBajos}` : 'Ir al catálogo'}</Link>
               </Button>
             )}
           </div>

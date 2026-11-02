@@ -13,7 +13,7 @@ export function servidorFalso(rutas: Record<string, Manejador>) {
   const fetchFalso = vi.fn(async (entrada: RequestInfo | URL, init: RequestInit = {}) => {
     const url = new URL(String(entrada), 'http://localhost')
     const metodo = (init.method ?? 'GET').toUpperCase()
-    llamadas.push({ metodo, url, cuerpo: init.body ? JSON.parse(String(init.body)) : undefined })
+    llamadas.push({ metodo, url, cuerpo: typeof init.body === 'string' ? JSON.parse(init.body) : init.body })
     // Like the real services: every route except login and register needs the Bearer token. This catches
     // requests sent before the session is wired (a page that loads data on mount after a reload).
     const publica = ['/api/auth/login', '/api/auth/register'].includes(url.pathname)
@@ -29,6 +29,11 @@ export function servidorFalso(rutas: Record<string, Manejador>) {
     llamadas,
     /** Calls to one route, e.g. llamadasA('GET /api/productos'). */
     llamadasA: (ruta: string) => llamadas.filter(l => `${l.metodo} ${l.url.pathname}` === ruta),
+    /**
+     * Calls made by the screen under test, excluding the one-time GET /api/auth/me that AuthProvider
+     * issues to load the avatar. Use it in "does not call the server" assertions.
+     */
+    llamadasDePantalla: () => llamadas.filter(l => l.url.pathname !== '/api/auth/me'),
   }
 }
 
@@ -49,5 +54,10 @@ export function producto(codigo: string, extra: Partial<ProductoResponse> = {}):
 }
 
 export function busqueda(productos: ProductoResponse[]) {
-  return { total: productos.length, mensaje: productos.length ? null : 'No se encontraron productos', productos }
+  return pagina('productos', productos, { mensaje: productos.length ? null : 'No se encontraron productos' })
+}
+
+/** Envoltorio de una página de cualquier lista. */
+export function pagina<T>(clave: string, items: T[], extra: Record<string, unknown> = {}) {
+  return { total: items.length, pagina: 1, tamano: 20, totalPaginas: 1, [clave]: items, ...extra }
 }

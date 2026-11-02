@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { alExpirar, fijarToken } from '../api/client'
 import type { Role, UserResponse } from '../api/auth'
+import { obtenerMiPerfil } from '../api/usuarios'
 import { estaVencido, leerJwt } from './jwt'
 import { AVISO_SESION_VENCIDA, AuthContext, useAuth, type AuthContextType } from './useAuth'
 
@@ -71,6 +72,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => clearTimeout(temporizador)
   }, [sesion, cerrar])
 
+  // The JWT does not carry the image URL: fetch the profile once per session and keep it in memory.
+  // If AuthCore is unavailable, the session still works and the UI falls back to the user's initial.
+  const perfilCargado = useRef<string | null>(null)
+  useEffect(() => {
+    if (!sesion) {
+      perfilCargado.current = null
+      return
+    }
+    if (perfilCargado.current === sesion.token) return
+    perfilCargado.current = sesion.token
+    let vigente = true
+    obtenerMiPerfil()
+      .then(perfil => {
+        if (!vigente) return
+        setSesion(actual => actual && actual.token === sesion.token
+          ? { ...actual, user: { ...actual.user, imageUrl: perfil.imageUrl ?? null } }
+          : actual)
+      })
+      .catch(() => {
+        if (!vigente) return
+        setSesion(actual => actual
+          ? { ...actual, user: { ...actual.user, imageUrl: actual.user.imageUrl ?? null } }
+          : actual)
+      })
+    return () => {
+      vigente = false
+    }
+  }, [sesion])
+
+  const actualizarImagen = useCallback((imageUrl: string | null) => {
+    setSesion(actual => actual ? { ...actual, user: { ...actual.user, imageUrl } } : actual)
+  }, [])
+
   const valor = useMemo<AuthContextType>(
     () => ({
       user: sesion?.user ?? null,
@@ -79,8 +113,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       logout,
       hasRole: (role: Role) => sesion?.user.roles.includes(role) ?? false,
+      actualizarImagen,
     }),
-    [sesion, aviso, login, logout],
+    [sesion, aviso, login, logout, actualizarImagen],
   )
 
   return <AuthContext.Provider value={valor}>{children}</AuthContext.Provider>

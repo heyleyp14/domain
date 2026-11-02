@@ -1,18 +1,31 @@
 import { useState, type ReactNode } from 'react'
-import { Download } from 'lucide-react'
+import { Download, ExternalLink } from 'lucide-react'
 import type { FacturaResponse } from '../api/domain'
 import { pdfFactura } from '../api/ventas'
 import { guardarArchivo } from '../lib/descargar'
 import { formatearPesos } from '../lib/formato'
+import { TAMANO_PAGINA } from '../lib/paginacion'
 import { MensajeError } from './FormFields'
+import { Paginador } from './Paginador'
 import { Button } from './ui/button'
 
 const FECHA = new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Bogota' })
 
+interface Props {
+  factura: FacturaResponse
+  acciones?: ReactNode
+  pagina?: number
+  onCambiarPagina?: (pagina: number) => void
+}
+
 /** An invoice exactly as the server stored it: every amount comes from the server (RNF-09). */
-export function FacturaDetalle({ factura, acciones }: { factura: FacturaResponse; acciones?: ReactNode }) {
+export function FacturaDetalle({ factura, acciones, pagina = 1, onCambiarPagina }: Props) {
   const [descargando, setDescargando] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const totalPaginas = Math.max(Math.ceil(factura.lineas.length / TAMANO_PAGINA), 1)
+  const paginaActual = Math.min(Math.max(pagina, 1), totalPaginas)
+  const desde = (paginaActual - 1) * TAMANO_PAGINA
+  const lineas = factura.lineas.slice(desde, desde + TAMANO_PAGINA)
 
   const descargar = async () => {
     setDescargando(true)
@@ -45,6 +58,17 @@ export function FacturaDetalle({ factura, acciones }: { factura: FacturaResponse
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          {factura.pdfUrl && (
+            <a
+              href={factura.pdfUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex min-h-[36px] items-center gap-2 rounded-md border border-border px-3 text-sm font-medium hover:bg-muted"
+            >
+              <ExternalLink className="h-4 w-4" aria-hidden="true" />
+              Ver PDF en la nube
+            </a>
+          )}
           <Button type="button" onClick={() => void descargar()} disabled={descargando}>
             <Download className="h-4 w-4" aria-hidden="true" />
             {descargando ? 'Descargando...' : 'Descargar PDF'}
@@ -85,7 +109,7 @@ export function FacturaDetalle({ factura, acciones }: { factura: FacturaResponse
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {factura.lineas.map(l => (
+              {lineas.map(l => (
                 <tr key={l.codigo}>
                   <td className="px-3 py-2">{l.codigo}</td>
                   <td className="px-3 py-2">{l.nombre}</td>
@@ -99,6 +123,16 @@ export function FacturaDetalle({ factura, acciones }: { factura: FacturaResponse
             </tbody>
           </table>
         </div>
+
+        {onCambiarPagina && (
+          <Paginador
+            pagina={paginaActual}
+            totalPaginas={totalPaginas}
+            total={factura.lineas.length}
+            etiqueta={factura.lineas.length === 1 ? 'línea' : 'líneas'}
+            onCambiar={onCambiarPagina}
+          />
+        )}
 
         <dl className="ml-auto grid grid-cols-[max-content_max-content] gap-x-8 gap-y-1 text-sm">
           <dt className="text-muted-foreground">Subtotal</dt>

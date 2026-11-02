@@ -12,6 +12,8 @@ export interface AuthContextType {
   login: (token: string) => boolean
   logout: () => void
   hasRole: (role: Role) => boolean
+  /** Actualiza la imagen del usuario en la sesión actual (tras subirla a Cloudinary). */
+  actualizarImagen: (imageUrl: string | null) => void
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null)

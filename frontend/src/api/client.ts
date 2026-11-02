@@ -49,7 +49,7 @@ async function leerError(response: Response): Promise<ApiError> {
 
 async function solicitar(path: string, init: RequestInit = {}, conSesion = true): Promise<Response> {
   const headers = new Headers(init.headers)
-  if (init.body !== undefined && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
+  if (typeof init.body === 'string' && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
   const token = conSesion ? obtenerToken() : null
   if (token) headers.set('Authorization', `Bearer ${token}`)
 
@@ -77,6 +77,11 @@ export async function apiPost<T>(path: string, data?: unknown): Promise<T> {
 
 export async function apiPut<T>(path: string, data: unknown): Promise<T> {
   return comoJson<T>(await solicitar(path, { method: 'PUT', body: JSON.stringify(data) }))
+}
+
+/** Sube un formulario multipart (por ejemplo, una imagen). El navegador fija el Content-Type con su boundary. */
+export async function apiPostForm<T>(path: string, formData: FormData): Promise<T> {
+  return comoJson<T>(await solicitar(path, { method: 'POST', body: formData }))
 }
 
 /** Downloads a PDF and returns it with the file name from Content-Disposition. */

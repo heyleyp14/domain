@@ -1,0 +1,19 @@
+# Imagen de desarrollo del frontend: Vite con HMR.
+#
+# Solo aporta dependencias y toolchain: al ejecutar, compose monta ./frontend en /app y un volumen
+# anónimo tapa node_modules para no mezclar los módulos del host con los de Linux de la imagen.
+FROM node:20-alpine
+
+WORKDIR /app
+
+RUN chown node:node /app
+USER node
+
+COPY --chown=node:node package.json package-lock.json ./
+RUN npm ci
+
+COPY --chown=node:node . .
+
+EXPOSE 5173
+
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

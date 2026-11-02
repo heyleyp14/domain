@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { CompraResponse } from '../api/domain'
 import { hoyEnBogota } from '../lib/fecha'
 import { renderApp, tokenDePrueba } from '../test/utilidades'
-import { busqueda, json, producto, proveedor, servidorFalso } from '../test/servidor'
+import { busqueda, json, pagina, producto, proveedor, servidorFalso } from '../test/servidor'
 
 const ADMIN = tokenDePrueba({ sub: 'admin', roles: ['USER', 'ADMIN'] })
 const martillo = producto('MAR-01', { nombre: 'Martillo de uña', stock: 4 })
@@ -17,9 +17,9 @@ const compra: CompraResponse = {
 
 function servidor(extra = {}) {
   return servidorFalso({
-    'GET /api/proveedores': json(200, [proveedor(1, 'Distribuidora Andina'), proveedor(2, 'Ferremax')]),
+    'GET /api/proveedores': json(200, pagina('proveedores', [proveedor(1, 'Distribuidora Andina'), proveedor(2, 'Ferremax')])),
     'GET /api/productos': json(200, busqueda([martillo])),
-    'GET /api/compras': json(200, [compra]),
+    'GET /api/compras': json(200, pagina('compras', [compra])),
     ...extra,
   })
 }
@@ -134,7 +134,7 @@ describe('Compras: historial (T3.6)', () => {
 
     await waitFor(() => expect(srv.llamadasA('GET /api/compras')).toHaveLength(2))
     const params = srv.llamadasA('GET /api/compras')[1].url.searchParams
-    expect(Object.fromEntries(params)).toEqual({ proveedorId: '2', desde: '2026-10-01', hasta: '2026-10-31', producto: 'MAR-01' })
+    expect(Object.fromEntries(params)).toEqual({ proveedorId: '2', desde: '2026-10-01', hasta: '2026-10-31', producto: 'MAR-01', pagina: '1' })
   })
 
   it('busca una compra por código y muestra el 404 del servidor', async () => {
@@ -150,6 +150,6 @@ describe('Compras: historial (T3.6)', () => {
     const srv = servidorFalso({})
     renderApp('/compras', tokenDePrueba({ roles: ['USER'] }))
     expect(screen.getByRole('heading', { name: 'No tiene permiso' })).toBeInTheDocument()
-    expect(srv.llamadas).toHaveLength(0)
+    expect(srv.llamadasDePantalla()).toHaveLength(0)
   })
 })

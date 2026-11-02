@@ -10,6 +10,8 @@ const ADMIN = tokenDePrueba({ sub: 'admin', roles: ['USER', 'ADMIN'] })
 const reporte: ReporteDiarioResponse = {
   fecha: '2026-10-30', mensaje: null, facturasEmitidas: 1, facturasAnuladas: 1, unidadesVendidas: 2,
   subtotal: 50000, iva: 9500, total: 59500,
+  productosTotal: 1, paginaProductos: 1, tamanoProductos: 20, totalPaginasProductos: 1,
+  facturasTotal: 2, paginaFacturas: 1, tamanoFacturas: 20, totalPaginasFacturas: 1,
   productos: [{ codigo: 'MAR-01', nombre: 'Martillo de uña', cantidad: 2, subtotal: 50000, iva: 9500, total: 59500 }],
   facturas: [
     { numero: 'FAC-2026-000007', fecha: '2026-10-31T01:15:00Z', cliente: 'Ana Pérez', vendedor: 'vendedor1', total: 59500, anulada: false },
@@ -18,7 +20,10 @@ const reporte: ReporteDiarioResponse = {
 }
 const vacio: ReporteDiarioResponse = {
   ...reporte, fecha: '2026-10-29', mensaje: 'No se registraron ventas en esta fecha', facturasEmitidas: 0, facturasAnuladas: 0,
-  unidadesVendidas: 0, subtotal: 0, iva: 0, total: 0, productos: [], facturas: [],
+  unidadesVendidas: 0, subtotal: 0, iva: 0, total: 0,
+  productosTotal: 0, paginaProductos: 1, tamanoProductos: 20, totalPaginasProductos: 0,
+  facturasTotal: 0, paginaFacturas: 1, tamanoFacturas: 20, totalPaginasFacturas: 0,
+  productos: [], facturas: [],
 }
 
 function servidor(extra = {}) {
@@ -108,6 +113,6 @@ describe('Reporte diario (T3.8, HU-12, RF-17)', () => {
     const srv = servidorFalso({})
     renderApp('/reporte', tokenDePrueba({ roles: ['USER'] }))
     expect(screen.getByRole('heading', { name: 'No tiene permiso' })).toBeInTheDocument()
-    expect(srv.llamadas).toHaveLength(0)
+    expect(srv.llamadasDePantalla()).toHaveLength(0)
   })
 })

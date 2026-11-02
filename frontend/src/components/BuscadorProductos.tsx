@@ -35,7 +35,7 @@ export function BuscadorProductos({ label, onElegir, soloActivos = true, exigirS
   useEffect(() => {
     if (!puedeBuscar) return
     let vigente = true
-    buscarProductos({ q, soloActivos })
+    buscarProductos({ q, soloActivos, pagina: 1, tamano: MAXIMO_SUGERENCIAS })
       .then(r => vigente && setRespuesta({ q, productos: r.productos.slice(0, MAXIMO_SUGERENCIAS) }))
       .catch(e => vigente && setRespuesta({ q, error: e instanceof Error ? e.message : 'No se pudo buscar' }))
     return () => {

@@ -32,6 +32,9 @@ export interface ProveedorResponse {
 export interface ProveedorDetalleResponse {
   proveedor: ProveedorResponse
   totalProductos: number
+  pagina: number
+  tamano: number
+  totalPaginas: number
   productos: ProductoResumenResponse[]
 }
 
@@ -72,8 +75,19 @@ export interface ProductoResponse extends ProductoResumenResponse {
 
 export interface BusquedaProductosResponse {
   total: number
+  pagina: number
+  tamano: number
+  totalPaginas: number
   mensaje: string | null
   productos: ProductoResponse[]
+}
+
+export interface ProveedoresResponse {
+  total: number
+  pagina: number
+  tamano: number
+  totalPaginas: number
+  proveedores: ProveedorResponse[]
 }
 
 // Facturas / Ventas
@@ -115,6 +129,8 @@ export interface FacturaResponse {
   anuladaPor: string | null
   anuladaEn: string | null // ISO 8601
   motivoAnulacion: string | null
+  /** URL del PDF publicado en Cloudinary; null si aún no se pudo publicar. */
+  pdfUrl?: string | null
 }
 
 export interface AnulacionRequest {
@@ -154,6 +170,14 @@ export interface CompraResponse {
   total: Dinero
 }
 
+export interface ComprasResponse {
+  total: number
+  pagina: number
+  tamano: number
+  totalPaginas: number
+  compras: CompraResponse[]
+}
+
 // Comparación de precios
 export interface OfertaResponse {
   proveedorId: number
@@ -169,6 +193,10 @@ export interface ComparacionResponse {
   codigoProducto: string
   nombreProducto: string
   mensaje: string | null
+  totalOfertas: number
+  pagina: number
+  tamano: number
+  totalPaginas: number
   ofertas: OfertaResponse[]
 }
 
@@ -200,6 +228,14 @@ export interface ReporteDiarioResponse {
   subtotal: Dinero
   iva: Dinero
   total: Dinero
+  productosTotal: number
+  paginaProductos: number
+  tamanoProductos: number
+  totalPaginasProductos: number
   productos: LineaReporteResponse[]
+  facturasTotal: number
+  paginaFacturas: number
+  tamanoFacturas: number
+  totalPaginasFacturas: number
   facturas: ResumenFacturaResponse[]
 }

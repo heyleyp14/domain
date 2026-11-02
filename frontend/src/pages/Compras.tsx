@@ -1,15 +1,18 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { ApiError } from '../api/client'
-import { listarProveedores } from '../api/catalogo'
+import { listarTodosProveedores } from '../api/catalogo'
 import { listarCompras, obtenerCompra, registrarCompra, type FiltrosCompras } from '../api/compras'
-import type { CompraResponse, ProductoResponse, ProveedorResponse } from '../api/domain'
+import type { CompraResponse, ComprasResponse, ProductoResponse, ProveedorResponse } from '../api/domain'
 import { BuscadorProductos } from '../components/BuscadorProductos'
 import { CampoSelect, CampoTexto } from '../components/Campo'
 import { MensajeError } from '../components/FormFields'
+import { Paginador } from '../components/Paginador'
 import { Button } from '../components/ui/button'
 import { Card } from '../components/ui/card'
+import { usePaginaUrl } from '../hooks/usePaginaUrl'
 import { formatearDia, hoyEnBogota } from '../lib/fecha'
 import { formatearPesos } from '../lib/formato'
+import { paginaValida } from '../lib/paginacion'
 import {
   ETIQUETAS_COMPRA, erroresDesdeServidor, hayErrores, validarLineaCompra,
   type CampoCompra, type ErroresCampo, type ErroresLineaCompra,
@@ -228,34 +231,52 @@ function DetalleCompra({ compra, onCerrar }: { compra: CompraResponse; onCerrar:
 
 /** Purchases (HU-10): ADMIN only. The route is already wrapped in <SoloAdmin> in App.tsx. */
 export function Compras() {
+  const { params, pagina, actualizar, irAPagina } = usePaginaUrl('pagina')
+  const filtros = useMemo<FiltrosCompras>(() => ({
+    proveedorId: params.get('proveedorId') ?? '',
+    desde: params.get('desde') ?? '',
+    hasta: params.get('hasta') ?? '',
+    producto: params.get('producto') ?? '',
+  }), [params])
   const [proveedores, setProveedores] = useState<ProveedorResponse[]>([])
-  const [borrador, setBorrador] = useState<FiltrosCompras>({})
-  const [filtros, setFiltros] = useState<FiltrosCompras>({})
+  const [borrador, setBorrador] = useState<FiltrosCompras>(filtros)
   const [version, setVersion] = useState(0)
-  const [respuesta, setRespuesta] = useState<{ clave: string; compras?: CompraResponse[]; error?: string } | null>(null)
+  const [respuesta, setRespuesta] = useState<{ clave: string; r?: ComprasResponse; error?: string } | null>(null)
   const [detalle, setDetalle] = useState<CompraResponse | null>(null)
   const [codigo, setCodigo] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
-  const clave = JSON.stringify([filtros, version])
+  const clave = JSON.stringify([filtros, pagina, version])
 
   useEffect(() => {
-    listarProveedores()
+    listarTodosProveedores()
       .then(setProveedores)
       .catch(e => setError(e instanceof Error ? e.message : 'No se pudieron cargar los proveedores'))
   }, [])
 
   useEffect(() => {
+    setBorrador(filtros)
+  }, [filtros])
+
+  useEffect(() => {
     let vigente = true
-    listarCompras(filtros)
-      .then(compras => vigente && setRespuesta({ clave, compras }))
+    listarCompras(filtros, pagina)
+      .then(r => vigente && setRespuesta({ clave, r }))
       .catch(e => vigente && setRespuesta({ clave, error: e instanceof Error ? e.message : 'No se pudieron cargar las compras' }))
     return () => {
       vigente = false
     }
-  }, [clave, filtros])
+  }, [clave, filtros, pagina, version])
 
   const actual = respuesta?.clave === clave ? respuesta : null
+  const resultado = actual?.r ?? null
+  const compras = resultado?.compras ?? []
+
+  useEffect(() => {
+    if (!resultado || resultado.totalPaginas === 0) return
+    const valida = paginaValida(pagina, resultado.totalPaginas)
+    if (valida !== pagina) irAPagina(valida, true)
+  }, [resultado, pagina, irAPagina])
 
   const alRegistrar = (c: CompraResponse) => {
     const productos = c.lineas.length
@@ -297,7 +318,16 @@ export function Compras() {
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Historial de compras</h2>
 
-        <form aria-label="Filtros de compras" onSubmit={e => { e.preventDefault(); setFiltros(borrador) }}
+        <form aria-label="Filtros de compras" onSubmit={e => {
+          e.preventDefault()
+          actualizar({
+            proveedorId: borrador.proveedorId?.trim() || null,
+            desde: borrador.desde || null,
+            hasta: borrador.hasta || null,
+            producto: borrador.producto?.trim() || null,
+            pagina: null,
+          })
+        }}
           className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <CampoSelect id="filtro-proveedor" label="Filtrar por proveedor" value={borrador.proveedorId ?? ''}
@@ -326,10 +356,10 @@ export function Compras() {
 
         <MensajeError mensaje={error ?? actual?.error ?? null} />
         {!actual && <div className="skeleton h-40 w-full" aria-hidden="true" />}
-        {actual?.compras && actual.compras.length === 0 && (
+        {resultado && compras.length === 0 && (
           <p className="text-sm text-muted-foreground">No hay compras con esos filtros</p>
         )}
-        {actual?.compras && actual.compras.length > 0 && (
+        {compras.length > 0 && (
           <div className="overflow-x-auto rounded-lg border border-border">
             <table aria-label="Historial de compras" className="w-full text-sm">
               <thead className="bg-muted/50 text-muted-foreground">
@@ -344,7 +374,7 @@ export function Compras() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {actual.compras.map(c => (
+                {compras.map(c => (
                   <tr key={c.codigo}>
                     <td className="px-3 py-2">{c.codigo}</td>
                     <td className="px-3 py-2">{formatearDia(c.fecha)}</td>
@@ -360,6 +390,15 @@ export function Compras() {
               </tbody>
             </table>
           </div>
+        )}
+        {resultado && compras.length > 0 && (
+          <Paginador
+            pagina={resultado.pagina}
+            totalPaginas={resultado.totalPaginas}
+            total={resultado.total}
+            etiqueta={resultado.total === 1 ? 'compra' : 'compras'}
+            onCambiar={irAPagina}
+          />
         )}
       </section>
     </section>

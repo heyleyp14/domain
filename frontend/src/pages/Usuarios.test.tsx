@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import type { UserResponse } from '../api/auth'
 import { renderApp, tokenDePrueba } from '../test/utilidades'
-import { json, servidorFalso } from '../test/servidor'
+import { json, pagina, servidorFalso } from '../test/servidor'
 
 const ADMIN = tokenDePrueba({ sub: 'admin', roles: ['USER', 'ADMIN'] })
 const usuarios: UserResponse[] = [
@@ -14,7 +14,7 @@ const usuarios: UserResponse[] = [
 function servidor(extra = {}) {
   let lista = usuarios
   const srv = servidorFalso({
-    'GET /api/auth/users': () => json(200, lista)(),
+    'GET /api/auth/users': () => json(200, pagina('usuarios', lista))(),
     'POST /api/auth/users/2/roles': () => {
       lista = lista.map(u => (u.id === 2 ? { ...u, roles: ['USER', 'ADMIN'] } : u))
       return new Response(null, { status: 204 })
@@ -115,6 +115,6 @@ describe('Usuarios (T3.9, HU-1, HU-3)', () => {
     const srv = servidorFalso({})
     renderApp('/usuarios', tokenDePrueba({ roles: ['USER'] }))
     expect(screen.getByRole('heading', { name: 'No tiene permiso' })).toBeInTheDocument()
-    expect(srv.llamadas).toHaveLength(0)
+    expect(srv.llamadasDePantalla()).toHaveLength(0)
   })
 })

@@ -1,36 +1,46 @@
 import { useEffect, useState } from 'react'
 import { Search } from 'lucide-react'
 import { compararPrecios } from '../api/comparacion'
-import type { ComparacionResponse, ProductoResponse } from '../api/domain'
+import type { ComparacionResponse } from '../api/domain'
 import { BuscadorProductos } from '../components/BuscadorProductos'
 import { MensajeError } from '../components/FormFields'
+import { Paginador } from '../components/Paginador'
 import { Card } from '../components/ui/card'
+import { usePaginaUrl } from '../hooks/usePaginaUrl'
 import { formatearDia } from '../lib/fecha'
 import { formatearPesos } from '../lib/formato'
+import { paginaValida } from '../lib/paginacion'
 
 /**
  * Price comparison between suppliers (HU-11, RF-19). ADMIN only: the route is wrapped in <SoloAdmin>.
  * The order and the "lowest price" marks come from the server; on a tie every tied supplier is marked.
  */
 export function Comparar() {
-  const [producto, setProducto] = useState<ProductoResponse | null>(null)
-  const [respuesta, setRespuesta] = useState<{ codigo: string; r?: ComparacionResponse; error?: string } | null>(null)
-  const codigo = producto?.codigo ?? null
+  const { params, pagina, actualizar, irAPagina } = usePaginaUrl('paginaOfertas')
+  const codigo = params.get('producto') ?? ''
+  const [respuesta, setRespuesta] = useState<{ clave: string; r?: ComparacionResponse; error?: string } | null>(null)
+  const clave = `${codigo}|${pagina}`
 
   useEffect(() => {
     if (!codigo) return
     let vigente = true
-    compararPrecios(codigo)
-      .then(r => vigente && setRespuesta({ codigo, r }))
-      .catch(e => vigente && setRespuesta({ codigo, error: e instanceof Error ? e.message : 'No se pudo comparar' }))
+    compararPrecios(codigo, pagina)
+      .then(r => vigente && setRespuesta({ clave, r }))
+      .catch(e => vigente && setRespuesta({ clave, error: e instanceof Error ? e.message : 'No se pudo comparar' }))
     return () => {
       vigente = false
     }
-  }, [codigo])
+  }, [codigo, pagina, clave])
 
-  const actual = codigo && respuesta?.codigo === codigo ? respuesta : null
+  const actual = codigo && respuesta?.clave === clave ? respuesta : null
   const comparacion = actual?.r
   const menores = comparacion?.ofertas.filter(o => o.esMenor) ?? []
+
+  useEffect(() => {
+    if (!comparacion || comparacion.totalPaginas === 0) return
+    const valida = paginaValida(pagina, comparacion.totalPaginas)
+    if (valida !== pagina) irAPagina(valida, true)
+  }, [comparacion, pagina, irAPagina])
 
   return (
     <section className="flex flex-col gap-5">
@@ -41,7 +51,7 @@ export function Comparar() {
 
       <Card className="p-4">
         {/* Inactive products are included: their purchase history is still useful for deciding. */}
-        <BuscadorProductos label="Producto a comparar" onElegir={setProducto} soloActivos={false} autoFocus />
+        <BuscadorProductos label="Producto a comparar" onElegir={p => actualizar({ producto: p.codigo, paginaOfertas: null })} soloActivos={false} autoFocus />
       </Card>
 
       {codigo && !actual && (
@@ -111,6 +121,14 @@ export function Comparar() {
                   </tbody>
                 </table>
               </div>
+
+              <Paginador
+                pagina={comparacion.pagina}
+                totalPaginas={comparacion.totalPaginas}
+                total={comparacion.totalOfertas}
+                etiqueta={comparacion.totalOfertas === 1 ? 'proveedor' : 'proveedores'}
+                onCambiar={irAPagina}
+              />
 
               <p className="text-xs leading-relaxed text-muted-foreground">
                 El precio vigente es el de la compra más reciente a cada proveedor. Se muestra también el menor precio que ha cobrado.

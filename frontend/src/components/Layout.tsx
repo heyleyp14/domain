@@ -44,11 +44,6 @@ export function Layout() {
   const { pathname } = useLocation()
   const { colapsado, abierto, toggleColapsado, setAbierto } = useSidebarStore()
   const [rutaAbierta, setRutaAbierta] = useState(pathname)
-  const [fotoPerfil, setFotoPerfil] = useState<string | null>(null)
-
-  useEffect(() => {
-    setFotoPerfil(localStorage.getItem('perfil-foto'))
-  }, [abierto])
 
   const iniciales = (user?.username ?? 'U').slice(0, 2).toUpperCase()
 
@@ -112,8 +107,8 @@ export function Layout() {
           {!efectivamenteColapsado && (
             <NavLink to="/perfil" className="usuario usuario-link">
               <div className="avatar-sidebar">
-                {fotoPerfil ? (
-                  <img src={fotoPerfil} alt="Foto de perfil" className="avatar-img" />
+                {user?.imageUrl ? (
+                  <img src={user.imageUrl} alt="Foto de perfil" className="avatar-img" />
                 ) : (
                   <span className="avatar-iniciales">{iniciales}</span>
                 )}

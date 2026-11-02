@@ -13,6 +13,7 @@ const emitida: FacturaResponse = {
   clienteDireccion: 'Calle 10 # 5-20', clienteTelefono: null, vendedor: 'vendedor1',
   lineas: [{ codigo: 'MAR-01', nombre: 'Martillo', cantidad: 2, precioBase: 25000, aplicaIva: true, subtotal: 50000, iva: 9500, total: 59500 }],
   subtotal: 50000, iva: 9500, total: 59500, anuladaPor: null, anuladaEn: null, motivoAnulacion: null,
+  pdfUrl: 'https://res.cloudinary.com/rln6jzqz/image/upload/v1/ferreteria/facturas/FAC-2026-000007.pdf',
 }
 const anulada: FacturaResponse = {
   ...emitida, estado: 'ANULADA', anuladaPor: 'admin', anuladaEn: '2026-10-30T21:00:00Z', motivoAnulacion: 'Error en el cobro',
@@ -32,6 +33,8 @@ describe('Facturas: consulta (T3.5, HU-9)', () => {
     const detalle = await screen.findByRole('article', { name: 'Factura FAC-2026-000007' })
     expect(within(detalle).getByText(/Ana Pérez/)).toBeInTheDocument()
     expect(within(detalle).getByRole('button', { name: 'Descargar PDF' })).toBeInTheDocument()
+    expect(within(detalle).getByRole('link', { name: 'Ver PDF en la nube' }))
+      .toHaveAttribute('href', 'https://res.cloudinary.com/rln6jzqz/image/upload/v1/ferreteria/facturas/FAC-2026-000007.pdf')
     expect(srv.llamadasA('GET /api/facturas/FAC-2026-000007')).toHaveLength(1)
   })
 
@@ -40,7 +43,7 @@ describe('Facturas: consulta (T3.5, HU-9)', () => {
     renderApp('/facturas', USER)
     await buscar('123')
     expect(screen.getByLabelText('Número de factura')).toHaveAccessibleDescription(/FAC-2026-000001/)
-    expect(srv.llamadas).toHaveLength(0)
+    expect(srv.llamadasDePantalla()).toHaveLength(0)
   })
 
   it('una factura inexistente muestra el mensaje del servidor', async () => {
@@ -61,7 +64,7 @@ describe('Facturas: consulta (T3.5, HU-9)', () => {
     renderApp('/facturas', USER)
     expect(screen.getByText(/Busca una factura para ver su detalle/)).toBeInTheDocument()
     expect(screen.queryByRole('article')).not.toBeInTheDocument()
-    expect(srv.llamadas).toHaveLength(0)
+    expect(srv.llamadasDePantalla()).toHaveLength(0)
   })
 
   it('limpiar la consulta borra el número y el detalle', async () => {

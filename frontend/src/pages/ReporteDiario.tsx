@@ -5,8 +5,10 @@ import type { ReporteDiarioResponse } from '../api/domain'
 import { pdfReporteDiario, reporteDiario } from '../api/reportes'
 import { CampoTexto } from '../components/Campo'
 import { MensajeError } from '../components/FormFields'
+import { Paginador } from '../components/Paginador'
 import { Button } from '../components/ui/button'
 import { Card } from '../components/ui/card'
+import { usePaginaUrl } from '../hooks/usePaginaUrl'
 import { guardarArchivo } from '../lib/descargar'
 import { hoyEnBogota } from '../lib/fecha'
 import { formatearPesos } from '../lib/formato'
@@ -18,31 +20,52 @@ const FECHA = /^\d{4}-\d{2}-\d{2}$/
 /** Daily sales report (HU-12, RF-17). ADMIN only: the route is wrapped in <SoloAdmin>. */
 export function ReporteDiario() {
   const hoy = hoyEnBogota()
-  const [fecha, setFecha] = useState(hoy)
-  const [respuesta, setRespuesta] = useState<{ fecha: string; r?: ReporteDiarioResponse; error?: string } | null>(null)
+  const productosPag = usePaginaUrl('paginaProductos')
+  const facturasPag = usePaginaUrl('paginaFacturas')
+  const { params, actualizar } = productosPag
+  const { pagina: paginaProductos, irAPagina: irAProductos } = productosPag
+  const { pagina: paginaFacturas, irAPagina: irAFacturas } = facturasPag
+  const fechaUrl = params.get('fecha') ?? hoy
+  const [fecha, setFecha] = useState(fechaUrl)
+  const [respuesta, setRespuesta] = useState<{ clave: string; r?: ReporteDiarioResponse; error?: string } | null>(null)
   const [descargando, setDescargando] = useState(false)
   const [errorPdf, setErrorPdf] = useState<string | null>(null)
-  const valida = FECHA.test(fecha)
+  const valida = FECHA.test(fechaUrl)
+  const clave = `${fechaUrl}|${paginaProductos}|${paginaFacturas}`
+
+  useEffect(() => {
+    setFecha(fechaUrl)
+  }, [fechaUrl])
 
   useEffect(() => {
     if (!valida) return
     let vigente = true
-    reporteDiario(fecha)
-      .then(r => vigente && setRespuesta({ fecha, r }))
-      .catch(e => vigente && setRespuesta({ fecha, error: e instanceof Error ? e.message : 'No se pudo consultar el reporte' }))
+    reporteDiario(fechaUrl, paginaProductos, paginaFacturas)
+      .then(r => vigente && setRespuesta({ clave, r }))
+      .catch(e => vigente && setRespuesta({ clave, error: e instanceof Error ? e.message : 'No se pudo consultar el reporte' }))
     return () => {
       vigente = false
     }
-  }, [fecha, valida])
+  }, [clave, fechaUrl, paginaProductos, paginaFacturas, valida])
 
-  const actual = valida && respuesta?.fecha === fecha ? respuesta : null
+  const actual = valida && respuesta?.clave === clave ? respuesta : null
   const reporte = actual?.r
+
+  useEffect(() => {
+    if (!reporte) return
+    if (reporte.totalPaginasProductos > 0 && paginaProductos > reporte.totalPaginasProductos) {
+      irAProductos(reporte.totalPaginasProductos, true)
+    }
+    if (reporte.totalPaginasFacturas > 0 && paginaFacturas > reporte.totalPaginasFacturas) {
+      irAFacturas(reporte.totalPaginasFacturas, true)
+    }
+  }, [reporte, paginaProductos, paginaFacturas, irAProductos, irAFacturas])
 
   const descargar = async () => {
     setDescargando(true)
     setErrorPdf(null)
     try {
-      guardarArchivo(await pdfReporteDiario(fecha))
+      guardarArchivo(await pdfReporteDiario(fechaUrl))
     } catch (e) {
       setErrorPdf(e instanceof Error ? e.message : 'No se pudo descargar el PDF')
     } finally {
@@ -68,7 +91,10 @@ export function ReporteDiario() {
       <Card className="p-4">
         <div className="max-w-xs">
           <CampoTexto id="reporte-fecha" label="Fecha" type="date" value={fecha} max={hoy}
-            onChange={e => setFecha(e.target.value)} ayuda="El día se cuenta en hora de Bogotá" />
+            onChange={e => {
+              setFecha(e.target.value)
+              actualizar({ fecha: e.target.value || null, paginaProductos: null, paginaFacturas: null }, true)
+            }} ayuda="El día se cuenta en hora de Bogotá" />
         </div>
       </Card>
 
@@ -147,6 +173,13 @@ export function ReporteDiario() {
                   </tbody>
                 </table>
               </div>
+              <Paginador
+                pagina={reporte.paginaProductos}
+                totalPaginas={reporte.totalPaginasProductos}
+                total={reporte.productosTotal}
+                etiqueta={reporte.productosTotal === 1 ? 'producto' : 'productos'}
+                onCambiar={irAProductos}
+              />
             </section>
           )}
 
@@ -187,6 +220,13 @@ export function ReporteDiario() {
                   </tbody>
                 </table>
               </div>
+              <Paginador
+                pagina={reporte.paginaFacturas}
+                totalPaginas={reporte.totalPaginasFacturas}
+                total={reporte.facturasTotal}
+                etiqueta={reporte.facturasTotal === 1 ? 'factura' : 'facturas'}
+                onCambiar={irAFacturas}
+              />
             </section>
           )}
         </Card>

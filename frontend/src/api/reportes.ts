@@ -7,8 +7,11 @@ const consulta = (fecha: string) => `?fecha=${encodeURIComponent(fecha)}`
  * ADMIN only (HU-12). The day is the Bogotá calendar day; cancelled invoices do not add to the totals but are
  * counted and listed. A day without sales answers 200 with an empty report and a message.
  */
-export function reporteDiario(fecha: string): Promise<ReporteDiarioResponse> {
-  return apiGet<ReporteDiarioResponse>(`/reportes/ventas-diarias${consulta(fecha)}`)
+export function reporteDiario(fecha: string, paginaProductos = 1, paginaFacturas = 1): Promise<ReporteDiarioResponse> {
+  const params = new URLSearchParams({ fecha })
+  params.set('paginaProductos', String(paginaProductos))
+  params.set('paginaFacturas', String(paginaFacturas))
+  return apiGet<ReporteDiarioResponse>(`/reportes/ventas-diarias?${params.toString()}`)
 }
 
 export function pdfReporteDiario(fecha: string) {

@@ -2,7 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { renderApp, tokenDePrueba } from '../test/utilidades'
-import { json, producto, proveedor, servidorFalso } from '../test/servidor'
+import { json, pagina, producto, proveedor, servidorFalso } from '../test/servidor'
 
 const ADMIN = tokenDePrueba({ sub: 'admin', roles: ['USER', 'ADMIN'] })
 const USER = tokenDePrueba({ roles: ['USER'] })
@@ -10,10 +10,13 @@ const USER = tokenDePrueba({ roles: ['USER'] })
 describe('Proveedores (T3.3, HU-8)', () => {
   it('lista los proveedores y muestra los productos que suministra cada uno', async () => {
     servidorFalso({
-      'GET /api/proveedores': json(200, [proveedor(1, 'Distribuidora Andina', { correo: 'ventas@andina.co' })]),
+      'GET /api/proveedores': json(200, pagina('proveedores', [proveedor(1, 'Distribuidora Andina', { correo: 'ventas@andina.co' })])),
       'GET /api/proveedores/1': json(200, {
         proveedor: proveedor(1, 'Distribuidora Andina'),
         totalProductos: 1,
+        pagina: 1,
+        tamano: 20,
+        totalPaginas: 1,
         productos: [producto('MAR-01', { stock: 2, stockBajo: true })],
       }),
     })
@@ -30,7 +33,7 @@ describe('Proveedores (T3.3, HU-8)', () => {
   })
 
   it('busca en el servidor por nombre', async () => {
-    const srv = servidorFalso({ 'GET /api/proveedores': json(200, []) })
+    const srv = servidorFalso({ 'GET /api/proveedores': json(200, pagina('proveedores', [])) })
     renderApp('/proveedores', USER)
     await userEvent.type(screen.getByLabelText('Buscar proveedor por nombre'), 'andina')
     await waitFor(() => expect(srv.llamadasA('GET /api/proveedores').at(-1)!.url.searchParams.get('q')).toBe('andina'))
@@ -38,7 +41,7 @@ describe('Proveedores (T3.3, HU-8)', () => {
   })
 
   it('un USER no puede crear ni editar proveedores', async () => {
-    servidorFalso({ 'GET /api/proveedores': json(200, [proveedor(1, 'Distribuidora Andina')]) })
+    servidorFalso({ 'GET /api/proveedores': json(200, pagina('proveedores', [proveedor(1, 'Distribuidora Andina')])) })
     renderApp('/proveedores', USER)
     await screen.findByText('Distribuidora Andina')
     expect(screen.queryByRole('button', { name: 'Nuevo proveedor' })).not.toBeInTheDocument()
@@ -46,7 +49,7 @@ describe('Proveedores (T3.3, HU-8)', () => {
   })
 
   it('sin teléfono ni correo marca los dos campos y no envía nada', async () => {
-    const srv = servidorFalso({ 'GET /api/proveedores': json(200, []) })
+    const srv = servidorFalso({ 'GET /api/proveedores': json(200, pagina('proveedores', [])) })
     renderApp('/proveedores', ADMIN)
     await userEvent.click(await screen.findByRole('button', { name: 'Nuevo proveedor' }))
     const form = screen.getByRole('form', { name: 'Nuevo proveedor' })
@@ -60,7 +63,7 @@ describe('Proveedores (T3.3, HU-8)', () => {
 
   it('crea un proveedor, enviando null en los datos opcionales vacíos', async () => {
     const srv = servidorFalso({
-      'GET /api/proveedores': json(200, []),
+      'GET /api/proveedores': json(200, pagina('proveedores', [])),
       'POST /api/proveedores': json(201, proveedor(5, 'Ferremax')),
     })
     renderApp('/proveedores', ADMIN)
@@ -78,7 +81,7 @@ describe('Proveedores (T3.3, HU-8)', () => {
 
   it('el 409 de nombre repetido aparece junto al nombre', async () => {
     servidorFalso({
-      'GET /api/proveedores': json(200, []),
+      'GET /api/proveedores': json(200, pagina('proveedores', [])),
       'POST /api/proveedores': json(409, { status: 409, mensaje: 'Ya existe un proveedor con el nombre «Ferremax»', detalles: [] }),
     })
     renderApp('/proveedores', ADMIN)

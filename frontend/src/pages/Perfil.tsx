@@ -1,56 +1,48 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
+import { subirMiImagen } from '../api/usuarios'
 import { useAuth } from '../auth/useAuth'
 import { MensajeError } from '../components/FormFields'
 
-const CLAVE_FOTO = 'perfil-foto'
 const CLAVE_NOMBRE = 'perfil-nombre'
+const MAX_BYTES = 2 * 1024 * 1024
+const TIPOS_PERMITIDOS = ['image/png', 'image/jpeg', 'image/webp']
 
 export function Perfil() {
-  const { user } = useAuth()
-  const [nombre, setNombre] = useState(user?.username ?? '')
-  const [foto, setFoto] = useState<string | null>(null)
+  const { user, actualizarImagen } = useAuth()
+  const [nombre, setNombre] = useState(() => localStorage.getItem(CLAVE_NOMBRE) ?? user?.username ?? '')
+  const [subiendo, setSubiendo] = useState(false)
   const [guardando, setGuardando] = useState(false)
   const [mensaje, setMensaje] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
-    const fotoGuardada = localStorage.getItem(CLAVE_FOTO)
-    if (fotoGuardada) setFoto(fotoGuardada)
-    const nombreGuardado = localStorage.getItem(CLAVE_NOMBRE)
-    if (nombreGuardado) setNombre(nombreGuardado)
-  }, [])
-
-  const onElegirFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (!file.type.startsWith('image/')) {
-      setError('El archivo debe ser una imagen')
+  const onElegirFoto = async (e: ChangeEvent<HTMLInputElement>) => {
+    const archivo = e.target.files?.[0]
+    e.target.value = ''
+    if (!archivo) return
+    setError(null)
+    setMensaje(null)
+    if (!TIPOS_PERMITIDOS.includes(archivo.type)) {
+      setError('Formato no permitido; use JPG, PNG o WebP')
       return
     }
-    if (file.size > 2 * 1024 * 1024) {
+    if (archivo.size > MAX_BYTES) {
       setError('La imagen no debe superar 2 MB')
       return
     }
-    const reader = new FileReader()
-    reader.onload = () => {
-      const dataUrl = String(reader.result)
-      setFoto(dataUrl)
-      try {
-        localStorage.setItem(CLAVE_FOTO, dataUrl)
-        setMensaje('Foto actualizada')
-        setError(null)
-      } catch {
-        setError('No se pudo guardar la foto (almacenamiento lleno)')
-      }
+    setSubiendo(true)
+    try {
+      const { imageUrl } = await subirMiImagen(archivo)
+      actualizarImagen(imageUrl)
+      setMensaje('Foto de perfil actualizada')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo subir la foto')
+    } finally {
+      setSubiendo(false)
     }
-    reader.onerror = () => {
-      setError('No se pudo leer la imagen')
-    }
-    reader.readAsDataURL(file)
   }
 
-  const onGuardar = (e: React.FormEvent) => {
+  const onGuardar = (e: FormEvent) => {
     e.preventDefault()
     setGuardando(true)
     setMensaje(null)
@@ -68,7 +60,7 @@ export function Perfil() {
   const inicial = (nombre || user?.username || 'U').charAt(0).toUpperCase()
 
   return (
-    <section className="flex flex-col gap-4 max-w-2xl -mt-6">
+    <section className="flex flex-col gap-4 max-w-2xl">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Mi perfil</h1>
         <p className="text-sm text-muted-foreground">Información de tu cuenta y preferencias</p>
@@ -77,8 +69,8 @@ export function Perfil() {
       <div className="rounded-lg border border-border bg-card p-5 flex flex-col gap-5">
         <div className="flex items-center gap-4">
           <div className="relative group">
-            {foto ? (
-              <img src={foto} alt="Foto de perfil" className="h-20 w-20 rounded-full object-cover border border-border" />
+            {user?.imageUrl ? (
+              <img src={user.imageUrl} alt="Foto de perfil" className="h-20 w-20 rounded-full object-cover border border-border" />
             ) : (
               <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center text-2xl font-bold text-muted-foreground border border-border" aria-hidden="true">
                 {inicial}
@@ -87,16 +79,26 @@ export function Perfil() {
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity cursor-pointer"
-              aria-label="Cambiar foto de perfil"
+              disabled={subiendo}
+              className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity cursor-pointer disabled:cursor-wait"
+              aria-label={subiendo ? 'Subiendo foto de perfil' : 'Cambiar foto de perfil'}
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
             </button>
-            <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={onElegirFoto} />
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="sr-only"
+              aria-label="Subir foto de perfil"
+              onChange={onElegirFoto}
+            />
           </div>
           <div className="flex flex-col gap-1">
             <p className="text-sm text-muted-foreground">Foto de perfil</p>
-            <p className="text-xs text-muted-foreground">Se usará próximamente en la app. Formatos: JPG, PNG.</p>
+            <p className="text-xs text-muted-foreground">
+              {subiendo ? 'Subiendo a Cloudinary...' : 'JPG, PNG o WebP. Máximo 2 MB.'}
+            </p>
           </div>
         </div>
 

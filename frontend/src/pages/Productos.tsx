@@ -1,19 +1,21 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { SearchX } from 'lucide-react'
 import { activarProducto, buscarProductos, desactivarProducto } from '../api/catalogo'
 import type { BusquedaProductosResponse, ProductoResponse } from '../api/domain'
 import { useAuth } from '../auth/useAuth'
 import { Confirmacion } from '../components/Confirmacion'
+import { EstadoVacio } from '../components/EstadoVacio'
 import { MensajeError } from '../components/FormFields'
+import { Paginador } from '../components/Paginador'
 import { useDebounce } from '../hooks/useDebounce'
+import { usePaginaUrl } from '../hooks/usePaginaUrl'
 import { formatearPesos } from '../lib/formato'
+import { TAMANO_PAGINA, paginaValida } from '../lib/paginacion'
 import { ProductoFormulario } from './ProductoFormulario'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Checkbox } from '../components/ui/checkbox'
 import { cn } from '@/lib/utils'
-
-const MINIMO_CARACTERES = 2
-const POR_PAGINA = 50
 
 type Edicion = { modo: 'nuevo' } | { modo: 'editar'; producto: ProductoResponse } | null
 
@@ -21,41 +23,58 @@ export function Productos() {
   const { hasRole } = useAuth()
   const esAdmin = hasRole('ADMIN')
 
-  const [texto, setTexto] = useState('')
-  const [soloActivos, setSoloActivos] = useState(false)
-  const [bajoStock, setBajoStock] = useState(false)
+  const { params, pagina, actualizar, irAPagina } = usePaginaUrl('pagina')
+  const qUrl = params.get('q') ?? ''
+  const soloActivos = params.get('soloActivos') === 'true'
+  const bajoStock = params.get('bajoStock') === 'true'
+  const [texto, setTexto] = useState(qUrl)
   const q = useDebounce(texto.trim(), 300)
 
   const [version, setVersion] = useState(0)
   const [respuesta, setRespuesta] = useState<{ clave: string; r?: BusquedaProductosResponse; error?: string } | null>(null)
-  const [visibles, setVisibles] = useState(POR_PAGINA)
   const [error, setError] = useState<string | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
   const [edicion, setEdicion] = useState<Edicion>(null)
   const [porDesactivar, setPorDesactivar] = useState<ProductoResponse | null>(null)
   const [ocupado, setOcupado] = useState(false)
 
-  const puedeBuscar = q.length >= MINIMO_CARACTERES || soloActivos || bajoStock
-  const clave = JSON.stringify([q, soloActivos, bajoStock, version])
+  const clave = JSON.stringify([q, soloActivos, bajoStock, pagina, version])
+  const ultimoQ = useRef(qUrl)
 
   useEffect(() => {
-    if (!puedeBuscar) return
+    setTexto(qUrl)
+  }, [qUrl])
+
+  useEffect(() => {
+    if (q === ultimoQ.current) return
+    ultimoQ.current = q
+    actualizar({ q: q || null, pagina: null }, true)
+  }, [q, actualizar])
+
+  useEffect(() => {
     let vigente = true
-    buscarProductos({ q, soloActivos, bajoStock })
-      .then(r => {
-        if (!vigente) return
-        setRespuesta({ clave, r })
-        setVisibles(POR_PAGINA)
-      })
+    buscarProductos({ q, soloActivos, bajoStock, pagina, tamano: TAMANO_PAGINA })
+      .then(r => vigente && setRespuesta({ clave, r }))
       .catch(e => vigente && setRespuesta({ clave, error: e instanceof Error ? e.message : 'No se pudo buscar' }))
     return () => {
       vigente = false
     }
-  }, [clave, puedeBuscar, q, soloActivos, bajoStock])
+  }, [clave, q, soloActivos, bajoStock, pagina])
 
-  const actual = puedeBuscar && respuesta?.clave === clave ? respuesta : null
-  const cargando = puedeBuscar && !actual
+  const actual = respuesta?.clave === clave ? respuesta : null
+  const cargando = !actual
   const resultado = actual?.r ?? null
+
+  useEffect(() => {
+    if (!resultado || resultado.totalPaginas === 0) return
+    const valida = paginaValida(pagina, resultado.totalPaginas)
+    if (valida !== pagina) irAPagina(valida, true)
+  }, [resultado, pagina, irAPagina])
+
+  const limpiar = () => {
+    setTexto('')
+    actualizar({ q: null, soloActivos: null, bajoStock: null, pagina: null }, true)
+  }
 
   const alGuardar = (p: ProductoResponse) => {
     setEdicion(null)
@@ -133,29 +152,37 @@ export function Productos() {
           />
         </div>
         <label className="flex items-center gap-2 text-sm">
-          <Checkbox checked={soloActivos} onCheckedChange={(v: boolean | 'indeterminate') => setSoloActivos(!!v)} />
+          <Checkbox checked={soloActivos} onCheckedChange={(v: boolean | 'indeterminate') => actualizar({ soloActivos: !!v, pagina: null })} />
           Solo activos
         </label>
         <label className="flex items-center gap-2 text-sm">
-          <Checkbox checked={bajoStock} onCheckedChange={(v: boolean | 'indeterminate') => setBajoStock(!!v)} />
+          <Checkbox checked={bajoStock} onCheckedChange={(v: boolean | 'indeterminate') => actualizar({ bajoStock: !!v, pagina: null })} />
           Solo stock bajo
         </label>
       </div>
 
       <MensajeError mensaje={error ?? actual?.error ?? null} />
 
-      {!puedeBuscar && <p className="text-sm text-muted-foreground">Escriba al menos {MINIMO_CARACTERES} caracteres o active un filtro.</p>}
       {cargando && <div className="skeleton h-40 w-full" aria-hidden="true" />}
       {resultado && !cargando && resultado.total === 0 && (
-        <p className="text-sm text-muted-foreground">{resultado.mensaje ?? 'No se encontraron productos'}</p>
+        <EstadoVacio
+          icono={SearchX}
+          titulo="No se encontraron productos"
+          descripcion={
+            q
+              ? `No hay coincidencias para «${q}». Prueba con otro código o nombre, o quita los filtros.`
+              : 'Prueba a quitar «Solo activos» o «Solo stock bajo», o busca por otro código o nombre.'
+          }
+          acciones={
+            <Button type="button" variant="secondary" size="sm" onClick={limpiar}>
+              Limpiar búsqueda y filtros
+            </Button>
+          }
+        />
       )}
 
       {productos.length > 0 && (
         <>
-          <p className="text-sm text-muted-foreground">
-            {resultado!.total} {resultado!.total === 1 ? 'producto' : 'productos'}
-            {resultado!.total > visibles && `; se muestran los primeros ${visibles}`}
-          </p>
           <div className="overflow-x-auto rounded-lg border border-border">
             <table className="w-full text-sm">
               <caption className="sr-only">Catálogo de productos</caption>
@@ -173,7 +200,7 @@ export function Productos() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {productos.slice(0, visibles).map(p => (
+                {productos.map(p => (
                   <tr key={p.codigo} className={cn(!p.activo && 'opacity-50')}>
                     <td className="px-3 py-2">{p.codigo}</td>
                     <td className="px-3 py-2">{p.nombre}</td>
@@ -206,11 +233,13 @@ export function Productos() {
               </tbody>
             </table>
           </div>
-          {resultado!.total > visibles && (
-            <Button type="button" variant="secondary" size="sm" onClick={() => setVisibles(v => v + POR_PAGINA)}>
-              Ver más
-            </Button>
-          )}
+          <Paginador
+            pagina={resultado!.pagina}
+            totalPaginas={resultado!.totalPaginas}
+            total={resultado!.total}
+            etiqueta={resultado!.total === 1 ? 'producto' : 'productos'}
+            onCambiar={irAPagina}
+          />
         </>
       )}
 
