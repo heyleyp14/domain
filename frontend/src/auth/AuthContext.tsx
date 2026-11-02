@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { alExpirar, fijarToken } from '../api/client'
 import type { Role, UserResponse } from '../api/auth'
@@ -72,34 +72,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => clearTimeout(temporizador)
   }, [sesion, cerrar])
 
-  // The JWT does not carry the image URL: fetch the profile once per session and keep it in memory.
+  // The JWT does not carry the image URL: fetch the profile once per token and keep it in memory.
   // If AuthCore is unavailable, the session still works and the UI falls back to the user's initial.
-  const perfilCargado = useRef<string | null>(null)
+  // The dependency is the token, not the session object: updating the image must not refetch, and a
+  // StrictMode remount must be able to retry after the first (cancelled) request.
+  const tokenActual = sesion?.token ?? null
   useEffect(() => {
-    if (!sesion) {
-      perfilCargado.current = null
-      return
-    }
-    if (perfilCargado.current === sesion.token) return
-    perfilCargado.current = sesion.token
+    if (!tokenActual) return
     let vigente = true
     obtenerMiPerfil()
       .then(perfil => {
         if (!vigente) return
-        setSesion(actual => actual && actual.token === sesion.token
+        setSesion(actual => actual && actual.token === tokenActual
           ? { ...actual, user: { ...actual.user, imageUrl: perfil.imageUrl ?? null } }
           : actual)
       })
       .catch(() => {
         if (!vigente) return
-        setSesion(actual => actual
-          ? { ...actual, user: { ...actual.user, imageUrl: actual.user.imageUrl ?? null } }
-          : actual)
       })
     return () => {
       vigente = false
     }
-  }, [sesion])
+  }, [tokenActual])
 
   const actualizarImagen = useCallback((imageUrl: string | null) => {
     setSesion(actual => actual ? { ...actual, user: { ...actual.user, imageUrl } } : actual)

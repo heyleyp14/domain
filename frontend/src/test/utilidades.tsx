@@ -1,3 +1,4 @@
+import { StrictMode } from 'react'
 import { render } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { AuthProvider } from '../auth/AuthContext'
@@ -18,16 +19,20 @@ export function tokenDePrueba(opciones: { sub?: string; roles?: Role[]; uid?: nu
   return `${header}.${payload}.firma-de-prueba`
 }
 
-/** Renders the real routes at a given URL, optionally with a stored session (as after a page reload). */
-export function renderApp(ruta: string, token?: string) {
+/**
+ * Renders the real routes at a given URL, optionally with a stored session (as after a page reload).
+ * `strict` reproduces the StrictMode double-mount of the real app (`main.tsx`).
+ */
+export function renderApp(ruta: string, token?: string, { strict = false }: { strict?: boolean } = {}) {
   if (token) sessionStorage.setItem('token', token)
-  return render(
+  const arbol = (
     <MemoryRouter initialEntries={[ruta]}>
       <AuthProvider>
         <AppRoutes />
       </AuthProvider>
-    </MemoryRouter>,
+    </MemoryRouter>
   )
+  return render(strict ? <StrictMode>{arbol}</StrictMode> : arbol)
 }
 
 /** Minimal fetch stub: returns the given status and JSON body. */
