@@ -19,12 +19,13 @@ final class Escenario {
     final CompraRepositoryEnMemoria compras = new CompraRepositoryEnMemoria();
     final NumeracionEnMemoria numeracion = new NumeracionEnMemoria();
     final GeneradorPdfFalso pdf = new GeneradorPdfFalso();
+    final AlmacenPdfFalso almacenPdf = new AlmacenPdfFalso();
     final TransaccionDirecta tx = new TransaccionDirecta();
     final RelojAjustable reloj = Datos.relojAjustable();
     final PoliticaAcceso acceso = new PoliticaAcceso();
 
     final CatalogoService catalogo = new CatalogoService(proveedores, productos, tx, reloj, acceso);
-    final VentaService venta = new VentaService(facturas, productos, numeracion, pdf, Datos.NEGOCIO, tx, reloj, acceso);
+    final VentaService venta = new VentaService(facturas, productos, numeracion, pdf, almacenPdf, Datos.NEGOCIO, tx, reloj, acceso);
     final CompraService compra = new CompraService(compras, proveedores, productos, tx, reloj, acceso);
     final ComparacionPreciosService comparacion = new ComparacionPreciosService(compras, proveedores, productos, acceso);
     final ReporteVentasService reporte = new ReporteVentasService(facturas, pdf, Datos.NEGOCIO, reloj, acceso);

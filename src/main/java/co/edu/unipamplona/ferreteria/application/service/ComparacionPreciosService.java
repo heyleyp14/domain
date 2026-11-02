@@ -1,7 +1,10 @@
 package co.edu.unipamplona.ferreteria.application.service;
 
+import co.edu.unipamplona.ferreteria.application.port.in.ComparacionPreciosPaginada;
 import co.edu.unipamplona.ferreteria.application.port.in.ComparacionPreciosUseCase;
 import co.edu.unipamplona.ferreteria.application.port.out.CompraRepositoryPort;
+import co.edu.unipamplona.ferreteria.application.port.out.Pagina;
+import co.edu.unipamplona.ferreteria.application.port.out.Paginacion;
 import co.edu.unipamplona.ferreteria.application.port.out.ProductoRepositoryPort;
 import co.edu.unipamplona.ferreteria.application.port.out.ProveedorRepositoryPort;
 import co.edu.unipamplona.ferreteria.domain.exception.ProductoNoEncontradoException;
@@ -45,5 +48,12 @@ public class ComparacionPreciosService implements ComparacionPreciosUseCase {
         Map<Long, String> nombres = new HashMap<>();
         proveedores.buscarPorIds(ids).forEach(p -> nombres.put(p.getId(), p.getNombre()));
         return comparador.comparar(producto.getCodigo(), producto.getNombre(), precios, nombres);
+    }
+
+    @Override
+    public ComparacionPreciosPaginada comparar(Actor actor, String codigoProducto, Paginacion paginacion) {
+        ComparacionPrecios completa = comparar(actor, codigoProducto);
+        return new ComparacionPreciosPaginada(completa.codigoProducto(), completa.nombreProducto(),
+                Pagina.de(completa.ofertas(), paginacion));
     }
 }

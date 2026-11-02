@@ -26,10 +26,11 @@ public class Factura {
     private String anuladaPor;
     private Instant anuladaEn;
     private String motivoAnulacion;
+    private String pdfUrl;
 
     private Factura(Long id, NumeroFactura numero, Instant fecha, String clienteNombre, String clienteDireccion,
                     String clienteTelefono, String vendedor, List<LineaFactura> lineas, EstadoFactura estado,
-                    String anuladaPor, Instant anuladaEn, String motivoAnulacion) {
+                    String anuladaPor, Instant anuladaEn, String motivoAnulacion, String pdfUrl) {
         this.id = id;
         this.numero = numero;
         this.fecha = fecha;
@@ -42,6 +43,7 @@ public class Factura {
         this.anuladaPor = anuladaPor;
         this.anuladaEn = anuladaEn;
         this.motivoAnulacion = motivoAnulacion;
+        this.pdfUrl = pdfUrl;
     }
 
     public static Factura emitir(NumeroFactura numero, String clienteNombre, String clienteDireccion, String clienteTelefono,
@@ -56,14 +58,22 @@ public class Factura {
                 Contacto.obligatorio(clienteNombre, "El nombre del cliente", 2, 100),
                 Contacto.opcional(clienteDireccion, "La dirección del cliente", 150),
                 Contacto.telefonoOpcional(clienteTelefono),
-                vendedor, new ArrayList<>(lineas), EstadoFactura.EMITIDA, null, null, null);
+                vendedor, new ArrayList<>(lineas), EstadoFactura.EMITIDA, null, null, null, null);
     }
 
     public static Factura reconstruir(Long id, NumeroFactura numero, Instant fecha, String clienteNombre, String clienteDireccion,
                                       String clienteTelefono, String vendedor, List<LineaFactura> lineas, EstadoFactura estado,
-                                      String anuladaPor, Instant anuladaEn, String motivoAnulacion) {
+                                      String anuladaPor, Instant anuladaEn, String motivoAnulacion, String pdfUrl) {
         return new Factura(id, numero, fecha, clienteNombre, clienteDireccion, clienteTelefono, vendedor, lineas, estado,
-                anuladaPor, anuladaEn, motivoAnulacion);
+                anuladaPor, anuladaEn, motivoAnulacion, pdfUrl);
+    }
+
+    /** Guarda la URL del PDF ya publicado en el almacenamiento externo. */
+    public void asignarPdfUrl(String pdfUrl) {
+        if (pdfUrl == null || pdfUrl.isBlank()) {
+            throw new ValorInvalidoException("La URL del PDF no puede estar vacia");
+        }
+        this.pdfUrl = pdfUrl;
     }
 
     /** Anula la factura. El motivo es obligatorio y una factura no se anula dos veces. */
@@ -97,4 +107,5 @@ public class Factura {
     public String getAnuladaPor() { return anuladaPor; }
     public Instant getAnuladaEn() { return anuladaEn; }
     public String getMotivoAnulacion() { return motivoAnulacion; }
+    public String getPdfUrl() { return pdfUrl; }
 }

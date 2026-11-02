@@ -2,6 +2,8 @@ package co.edu.unipamplona.ferreteria.application.service;
 
 import co.edu.unipamplona.ferreteria.application.port.in.SeedResult;
 import co.edu.unipamplona.ferreteria.application.port.in.SeedUseCase;
+import co.edu.unipamplona.ferreteria.application.port.out.AlmacenPdfPort;
+import co.edu.unipamplona.ferreteria.testsupport.AlmacenPdfFalso;
 import co.edu.unipamplona.ferreteria.infrastructure.adapters.out.persistence.repository.CompraJpaRepository;
 import co.edu.unipamplona.ferreteria.infrastructure.adapters.out.persistence.repository.FacturaJpaRepository;
 import co.edu.unipamplona.ferreteria.infrastructure.adapters.out.persistence.repository.NumeracionFacturaJpaRepository;
@@ -10,12 +12,24 @@ import co.edu.unipamplona.ferreteria.infrastructure.adapters.out.persistence.rep
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Verifica que el seed borra todo lo existente y crea 20 registros por entidad. */
 @SpringBootTest
 class SeedServiceTest {
+
+    @TestConfiguration
+    static class AlmacenDePdfDePrueba {
+        @Bean
+        @Primary
+        AlmacenPdfPort almacenPdfDePrueba() {
+            return new AlmacenPdfFalso();
+        }
+    }
 
     @Autowired
     private SeedUseCase seed;
@@ -46,6 +60,8 @@ class SeedServiceTest {
         assertThat(productoJpa.count()).isEqualTo(20);
         assertThat(compraJpa.count()).isEqualTo(20);
         assertThat(facturaJpa.count()).isEqualTo(20);
+        assertThat(facturaJpa.findAll())
+                .allMatch(f -> f.getPdfUrl() != null && f.getPdfUrl().startsWith("https://"));
     }
 
     @Test

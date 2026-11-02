@@ -1,6 +1,8 @@
 package co.edu.unipamplona.ferreteria.infrastructure.adapters.out.persistence;
 
 import co.edu.unipamplona.ferreteria.application.port.out.FiltroProductos;
+import co.edu.unipamplona.ferreteria.application.port.out.Pagina;
+import co.edu.unipamplona.ferreteria.application.port.out.Paginacion;
 import co.edu.unipamplona.ferreteria.application.port.out.ProductoRepositoryPort;
 import co.edu.unipamplona.ferreteria.domain.exception.ProductoNoEncontradoException;
 import co.edu.unipamplona.ferreteria.domain.model.Producto;
@@ -12,6 +14,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -56,17 +60,39 @@ public class ProductoRepositoryAdapter implements ProductoRepositoryPort {
 
     @Override
     public List<Producto> buscar(FiltroProductos f) {
-        String patron = f.texto() == null ? null : "%" + f.texto().toLowerCase(Locale.ROOT) + "%";
-        Set<Long> proveedores = (f.proveedoresCoincidentes() == null || f.proveedoresCoincidentes().isEmpty())
-                ? Set.of(-1L)
-                : f.proveedoresCoincidentes();
-        return jpa.buscar(patron, f.soloActivos(), f.bajoStock(), Producto.UMBRAL_STOCK_BAJO, proveedores).stream()
+        return jpa.buscar(patron(f), f.soloActivos(), f.bajoStock(), Producto.UMBRAL_STOCK_BAJO, proveedores(f)).stream()
                 .map(mapper::aDominio)
                 .toList();
     }
 
     @Override
+    public Pagina<Producto> buscar(FiltroProductos f, Paginacion paginacion) {
+        Page<ProductoEntity> page = jpa.buscar(patron(f), f.soloActivos(), f.bajoStock(), Producto.UMBRAL_STOCK_BAJO,
+                proveedores(f), PageRequest.of(paginacion.pagina() - 1, paginacion.tamano()));
+        return new Pagina<>(page.getContent().stream().map(mapper::aDominio).toList(), page.getTotalElements(),
+                paginacion.pagina(), paginacion.tamano());
+    }
+
+    @Override
     public List<Producto> buscarPorProveedor(long proveedorId) {
         return jpa.buscarPorProveedor(proveedorId).stream().map(mapper::aDominio).toList();
+    }
+
+    @Override
+    public Pagina<Producto> buscarPorProveedor(long proveedorId, Paginacion paginacion) {
+        Page<ProductoEntity> page = jpa.buscarPorProveedor(proveedorId,
+                PageRequest.of(paginacion.pagina() - 1, paginacion.tamano()));
+        return new Pagina<>(page.getContent().stream().map(mapper::aDominio).toList(), page.getTotalElements(),
+                paginacion.pagina(), paginacion.tamano());
+    }
+
+    private String patron(FiltroProductos f) {
+        return f.texto() == null ? null : "%" + f.texto().toLowerCase(Locale.ROOT) + "%";
+    }
+
+    private Set<Long> proveedores(FiltroProductos f) {
+        return (f.proveedoresCoincidentes() == null || f.proveedoresCoincidentes().isEmpty())
+                ? Set.of(-1L)
+                : f.proveedoresCoincidentes();
     }
 }

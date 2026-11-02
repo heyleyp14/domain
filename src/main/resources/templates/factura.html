@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="|Factura ${factura.numero}|">Factura</title>
+    <style th:inline="text">
+        @page {
+            size: A4;
+            margin: 14mm 15mm 16mm 15mm;
+            @top-right {
+                content: "[[${factura.numero}]]";
+                font-family: Lato;
+                font-weight: 700;
+                font-size: 7pt;
+                color: #a8a29e;
+            }
+            @bottom-center {
+                content: "Página " counter(page) " de " counter(pages);
+                font-family: Lato;
+                font-size: 7pt;
+                color: #a8a29e;
+            }
+        }
+        * { box-sizing: border-box; }
+        body { font-family: Lato, Helvetica, Arial, sans-serif; font-size: 8.6pt; line-height: 1.35;
+               color: #1c1917; margin: 0; }
+        table { border-collapse: collapse; }
+        .num { font-family: PlexMono, Courier, monospace; text-align: right; white-space: nowrap; }
+        .rotulo { font-family: Lato; font-weight: 700; font-size: 6.6pt; letter-spacing: 0.6pt;
+                  text-transform: uppercase; color: #78716c; }
+        .secundario { color: #57534e; font-size: 8pt; }
+        .muted { color: #a8a29e; }
+
+        .marca-agua { position: absolute; top: 300pt; left: 0; right: 0; text-align: center;
+                      font-family: Lato; font-weight: 700; font-size: 68pt; color: #fee2e2;
+                      transform: rotate(-28deg); z-index: -1; }
+
+        table.cabecera { width: 100%; }
+        table.cabecera td { vertical-align: top; }
+        .identidad-tabla td { vertical-align: middle; }
+        .logo-celda { width: 52pt; padding-right: 9pt; }
+        .logo { width: 44pt; height: 44pt; }
+        .marca { font-family: Lato; font-weight: 700; font-size: 13pt; letter-spacing: -0.2pt; }
+        .marca-dato { color: #57534e; font-size: 7.6pt; margin-top: 1.5pt; }
+        .documento { text-align: right; width: 42%; }
+        .documento .etiqueta { font-family: Lato; font-weight: 700; font-size: 6.6pt; letter-spacing: 0.7pt;
+                                text-transform: uppercase; color: #78716c; }
+        .documento .numero { font-family: Lato; font-weight: 700; font-size: 18pt; letter-spacing: -0.3pt;
+                             margin: 1pt 0 2pt; }
+        .documento .fecha { color: #57534e; font-size: 8pt; }
+        .estado { display: inline-block; margin-top: 5pt; padding: 2pt 8pt; border: 0.8pt solid;
+                  font-family: Lato; font-weight: 700; font-size: 6.6pt; letter-spacing: 0.7pt;
+                  text-transform: uppercase; }
+        .estado-emitida { color: #166534; background: #f0fdf4; border-color: #bbf7d0; }
+        .estado-anulada { color: #991b1b; background: #fef2f2; border-color: #fecaca; }
+
+        .regla { border-top: 1.6pt solid #1c1917; margin-top: 9pt; }
+
+        .anulada { border: 1pt solid #fecaca; background: #fef2f2; color: #991b1b;
+                   padding: 6pt 9pt; margin-top: 10pt; }
+        .anulada-titulo { font-weight: 700; font-size: 9pt; letter-spacing: 0.8pt; }
+        .anulada div { margin-top: 1.5pt; font-size: 8pt; }
+
+        table.partes { width: 100%; margin-top: 12pt; }
+        table.partes td { vertical-align: top; }
+        .tarjeta { width: 48%; background: #fafaf9; border: 0.6pt solid #e7e5e4; padding: 8pt 10pt; }
+        .hueco { width: 4%; }
+        .destacado { font-weight: 700; font-size: 10pt; margin-top: 2pt; }
+
+        table.lineas { width: 100%; margin-top: 13pt; -fs-table-paginate: paginate; }
+        table.lineas thead th { background: #f5f5f4; border-top: 0.8pt solid #d6d3d1;
+                                border-bottom: 0.8pt solid #d6d3d1; padding: 5pt 5pt;
+                                font-family: Lato; font-weight: 700; font-size: 6.6pt;
+                                letter-spacing: 0.5pt; text-transform: uppercase; color: #57534e;
+                                text-align: left; }
+        table.lineas thead th.num { text-align: right; }
+        table.lineas tbody td { border-bottom: 0.5pt solid #e7e5e4; padding: 5pt 5pt; vertical-align: top; }
+        .codigo { white-space: nowrap; }
+        table.lineas tbody tr.impar td { background: #fcfcfb; }
+        .producto { font-weight: 400; }
+
+        table.totales { width: 100%; margin-top: 8pt; }
+        .totales .vacio { width: 58%; }
+        .panel { width: 42%; border: 0.6pt solid #e7e5e4; background: #fafaf9; padding: 7pt 10pt; }
+        table.panel-totales { width: 100%; }
+        table.panel-totales td { padding: 2pt 0; }
+        .rotulo-total { color: #57534e; font-size: 8pt; }
+        table.panel-totales tr.fila-total td { border-top: 1.4pt solid #1c1917; padding-top: 5pt;
+                                               font-weight: 700; font-size: 11pt; }
+
+        .letras { margin-top: 10pt; border: 0.6pt solid #e7e5e4; padding: 6pt 9pt; background: #ffffff; }
+        .letras-texto { font-weight: 700; font-size: 8.6pt; }
+        .letras .rotulo { margin-right: 3pt; }
+
+        .pie { margin-top: 18pt; border-top: 0.6pt solid #d6d3d1; padding-top: 6pt;
+               color: #78716c; font-size: 7pt; }
+        .pie table { width: 100%; }
+        .pie td { vertical-align: top; }
+        .pie-derecha { text-align: right; font-family: PlexMono, monospace; }
+        .gracias { margin-top: 10pt; color: #57534e; font-size: 8.4pt; }
+    </style>
+</head>
+<body>
+<div class="marca-agua" th:if="${factura.anulada}">ANULADA</div>
+
+<table class="cabecera">
+    <tr>
+        <td class="identidad">
+            <table class="identidad-tabla">
+                <tr>
+                    <td class="logo-celda" th:if="${logo != null}">
+                        <img th:src="${logo}" class="logo" alt=""/>
+                    </td>
+                    <td>
+                        <div class="marca" th:text="${negocio.nombre}">Ferretería Ambiente Murano 3D</div>
+                        <div class="marca-dato">
+                            <span th:text="${negocio.ciudad}">Cúcuta</span>
+                            <span th:if="${!#strings.isEmpty(negocio.direccion)}" th:text="| · ${negocio.direccion}|"></span>
+                        </div>
+                        <div class="marca-dato"
+                             th:if="${!#strings.isEmpty(negocio.identificacion) or !#strings.isEmpty(negocio.telefono)}">
+                            <span th:if="${!#strings.isEmpty(negocio.identificacion)}"
+                                  th:text="|NIT ${negocio.identificacion}|">NIT</span>
+                            <span th:if="${!#strings.isEmpty(negocio.telefono)}"
+                                  th:text="| · Tel. ${negocio.telefono}|">Tel.</span>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </td>
+        <td class="documento">
+            <div class="etiqueta">Factura de venta</div>
+            <div class="numero" th:text="${factura.numero}">FAC-2026-000001</div>
+            <div class="fecha" th:text="${factura.fecha}">01/11/2026 10:00</div>
+            <span class="estado" th:classappend="${factura.anulada} ? ' estado-anulada' : ' estado-emitida'"
+                  th:text="${factura.estado}">EMITIDA</span>
+        </td>
+    </tr>
+</table>
+<div class="regla"></div>
+
+<div class="anulada" th:if="${factura.anulada}">
+    <div class="anulada-titulo">FACTURA ANULADA</div>
+    <div th:text="|Motivo: ${factura.motivoAnulacion}|"></div>
+    <div th:text="|Anulada por: ${factura.anuladaPor}|"></div>
+</div>
+
+<table class="partes">
+    <tr>
+        <td class="tarjeta">
+            <div class="rotulo">Cliente</div>
+            <div class="destacado" th:text="${factura.clienteNombre}">Cliente</div>
+            <div class="secundario" th:if="${!#strings.isEmpty(factura.clienteDireccion)}"
+                 th:text="${factura.clienteDireccion}"></div>
+            <div class="secundario" th:if="${!#strings.isEmpty(factura.clienteTelefono)}"
+                 th:text="|Tel. ${factura.clienteTelefono}|"></div>
+        </td>
+        <td class="hueco"></td>
+        <td class="tarjeta">
+            <div class="rotulo">Vendedor</div>
+            <div class="destacado" th:text="${factura.vendedor}">vendedor</div>
+            <div class="secundario">Atendido en punto de venta</div>
+        </td>
+    </tr>
+</table>
+
+<table class="lineas">
+    <thead>
+    <tr>
+        <th class="codigo">Código</th>
+        <th>Producto</th>
+        <th class="num">Cant.</th>
+        <th class="num">Precio</th>
+        <th class="num">Subtotal</th>
+        <th class="num">IVA</th>
+        <th class="num">Total</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="linea, iter : ${factura.lineas}" th:classappend="${iter.odd} ? ' impar' : ''">
+        <td class="codigo" th:text="${linea.codigo}">P-1</td>
+        <td class="producto" th:text="${linea.nombre}">Producto</td>
+        <td class="num" th:text="${linea.cantidad}">1</td>
+        <td class="num" th:text="${linea.precio}">$ 0,00</td>
+        <td class="num" th:text="${linea.subtotal}">$ 0,00</td>
+        <td class="num" th:text="${linea.iva}">$ 0,00</td>
+        <td class="num" th:text="${linea.total}">$ 0,00</td>
+    </tr>
+    </tbody>
+</table>
+
+<table class="totales">
+    <tr>
+        <td class="vacio"></td>
+        <td class="panel">
+            <table class="panel-totales">
+                <tr>
+                    <td class="rotulo-total">Subtotal</td>
+                    <td class="num" th:text="${factura.subtotal}">$ 0,00</td>
+                </tr>
+                <tr>
+                    <td class="rotulo-total">IVA</td>
+                    <td class="num" th:text="${factura.iva}">$ 0,00</td>
+                </tr>
+                <tr class="fila-total">
+                    <td>Total</td>
+                    <td class="num" th:text="${factura.total}">$ 0,00</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+<div class="letras">
+    <span class="rotulo">Total en letras</span>
+    <span class="letras-texto" th:text="|Son: ${factura.totalEnLetras}|">Son: cero pesos con 00/100</span>
+    <span class="muted">M/CTE</span>
+</div>
+
+<div class="gracias">Gracias por su compra.</div>
+
+<div class="pie">
+    <table>
+        <tr>
+            <td>
+                <span th:text="${negocio.nombre}">Ferretería</span> ·
+                <span th:text="${negocio.ciudad}">Cúcuta</span>
+                <span th:if="${!#strings.isEmpty(negocio.identificacion)}" th:text="| · NIT ${negocio.identificacion}|"></span>
+                <span th:if="${!#strings.isEmpty(negocio.telefono)}" th:text="| · Tel. ${negocio.telefono}|"></span>
+            </td>
+            <td class="pie-derecha" th:text="${factura.numero}">FAC-2026-000001</td>
+        </tr>
+    </table>
+    <div style="margin-top:3pt;">Documento generado electrónicamente por Ferretería Ambiente Murano 3D.</div>
+</div>
+</body>
+</html>

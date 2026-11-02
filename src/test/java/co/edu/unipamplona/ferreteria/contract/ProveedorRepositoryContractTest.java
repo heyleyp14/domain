@@ -2,6 +2,8 @@ package co.edu.unipamplona.ferreteria.contract;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import co.edu.unipamplona.ferreteria.application.port.out.Pagina;
+import co.edu.unipamplona.ferreteria.application.port.out.Paginacion;
 import co.edu.unipamplona.ferreteria.application.port.out.ProveedorRepositoryPort;
 import co.edu.unipamplona.ferreteria.domain.model.Proveedor;
 import co.edu.unipamplona.ferreteria.testsupport.Datos;
@@ -74,5 +76,24 @@ public abstract class ProveedorRepositoryContractTest {
         assertEquals(List.of("Aceros del Norte"), repo().buscar("ACEROS").stream().map(Proveedor::getNombre).toList());
         assertEquals(List.of("Pinturas Cúcuta"), repo().buscar("cúcuta").stream().map(Proveedor::getNombre).toList());
         assertTrue(repo().buscar("zzz").isEmpty());
+    }
+
+    @Test
+    void paginaLaLista() {
+        repo().guardar(Datos.proveedor("Zinc SA"));
+        repo().guardar(Datos.proveedor("Aceros del Norte"));
+        repo().guardar(Datos.proveedor("Pinturas Cúcuta"));
+
+        Pagina<Proveedor> primera = repo().buscar(null, Paginacion.de(1, 2));
+        assertEquals(List.of("Aceros del Norte", "Pinturas Cúcuta"), primera.contenido().stream().map(Proveedor::getNombre).toList());
+        assertEquals(3, primera.total());
+        assertEquals(2, primera.totalPaginas());
+
+        Pagina<Proveedor> segunda = repo().buscar(null, Paginacion.de(2, 2));
+        assertEquals(List.of("Zinc SA"), segunda.contenido().stream().map(Proveedor::getNombre).toList());
+
+        Pagina<Proveedor> filtrada = repo().buscar("aceros", Paginacion.de(1, 2));
+        assertEquals(1, filtrada.total());
+        assertEquals(1, filtrada.contenido().size());
     }
 }

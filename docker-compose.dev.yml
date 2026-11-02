@@ -1,0 +1,54 @@
+# Overlay de desarrollo: las tres apps y las dos bases corren en Docker con recarga automática.
+#
+# Primera vez (construye las imágenes de desarrollo):
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml build
+#
+# Después, solo levantar (sin --build):
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+#
+# Las imágenes `*-dev` solo aportan el toolchain; el código entra por bind mount, así que editar un
+# .java, .tsx o .css recompila/recarga sin reconstruir nada. No pisan las imágenes de producción.
+services:
+  authcore:
+    image: pi-authcore-dev
+    build:
+      context: .
+      dockerfile: docker/authcore.dev.Dockerfile
+    volumes:
+      - ../authcore:/app
+      - authcore-build:/app/build
+      - authcore-project-gradle:/app/.gradle
+      - gradle-cache:/home/gradle/.gradle
+
+  domain:
+    image: pi-domain-dev
+    build:
+      context: .
+      dockerfile: docker/domain.dev.Dockerfile
+    volumes:
+      - .:/app
+      - domain-target:/app/target
+      - maven-cache:/root/.m2
+
+  frontend:
+    image: pi-frontend-dev
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports: !override
+      - "8080:5173"
+    environment:
+      VITE_AUTH_TARGET: http://authcore:8081
+      VITE_DOMAIN_TARGET: http://domain:8085
+      VITE_USE_POLLING: "false"
+    volumes:
+      - ./frontend:/app
+      # Anónimo: tapa los node_modules del host y se siembra desde la imagen.
+      - /app/node_modules
+
+volumes:
+  authcore-build:
+  authcore-project-gradle:
+  gradle-cache:
+  domain-target:
+  maven-cache:

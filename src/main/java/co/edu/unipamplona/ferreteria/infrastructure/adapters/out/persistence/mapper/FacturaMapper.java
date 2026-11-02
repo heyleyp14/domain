@@ -24,6 +24,7 @@ public class FacturaMapper {
         e.setAnuladaPor(f.getAnuladaPor());
         e.setAnuladaEn(f.getAnuladaEn());
         e.setMotivoAnulacion(f.getMotivoAnulacion());
+        e.setPdfUrl(f.getPdfUrl());
         int posicion = 0;
         for (LineaFactura l : f.getLineas()) {
             LineaFacturaEntity le = new LineaFacturaEntity();
@@ -44,6 +45,7 @@ public class FacturaMapper {
         e.setAnuladaPor(f.getAnuladaPor());
         e.setAnuladaEn(f.getAnuladaEn());
         e.setMotivoAnulacion(f.getMotivoAnulacion());
+        e.setPdfUrl(f.getPdfUrl());
     }
 
     public Factura aDominio(FacturaEntity e) {
@@ -53,6 +55,6 @@ public class FacturaMapper {
                 .toList();
         return Factura.reconstruir(e.getId(), NumeroFactura.desde(e.getNumero()), e.getFecha(), e.getClienteNombre(),
                 e.getClienteDireccion(), e.getClienteTelefono(), e.getVendedor(), lineas, e.getEstado(),
-                e.getAnuladaPor(), e.getAnuladaEn(), e.getMotivoAnulacion());
+                e.getAnuladaPor(), e.getAnuladaEn(), e.getMotivoAnulacion(), e.getPdfUrl());
     }
 }

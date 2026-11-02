@@ -1,5 +1,6 @@
 package co.edu.unipamplona.ferreteria.infrastructure.config;
 
+import co.edu.unipamplona.ferreteria.application.port.out.AlmacenPdfPort;
 import co.edu.unipamplona.ferreteria.application.port.out.CompraRepositoryPort;
 import co.edu.unipamplona.ferreteria.application.port.out.DatosNegocio;
 import co.edu.unipamplona.ferreteria.application.port.out.FacturaRepositoryPort;
@@ -56,8 +57,9 @@ public class BeanConfig {
 
     @Bean
     VentaService ventaService(FacturaRepositoryPort facturas, ProductoRepositoryPort productos, NumeracionFacturaPort numeracion,
-                              GeneradorPdfPort pdf, DatosNegocio negocio, TransaccionPort transaccion, Clock reloj, PoliticaAcceso acceso) {
-        return new VentaService(facturas, productos, numeracion, pdf, negocio, transaccion, reloj, acceso);
+                              GeneradorPdfPort pdf, AlmacenPdfPort almacenPdf, DatosNegocio negocio,
+                              TransaccionPort transaccion, Clock reloj, PoliticaAcceso acceso) {
+        return new VentaService(facturas, productos, numeracion, pdf, almacenPdf, negocio, transaccion, reloj, acceso);
     }
 
     @Bean
@@ -81,7 +83,10 @@ public class BeanConfig {
     @Bean
     SeedUseCase seedUseCase(ProveedorRepositoryPort proveedores, ProductoRepositoryPort productos,
                             CompraRepositoryPort compras, FacturaRepositoryPort facturas,
-                            NumeracionFacturaPort numeracion, DataCleanupPort cleanup, TransaccionPort transaccion, PoliticaAcceso acceso) {
-        return new SeedService(proveedores, productos, compras, facturas, numeracion, cleanup, transaccion, acceso);
+                            NumeracionFacturaPort numeracion, DataCleanupPort cleanup,
+                            GeneradorPdfPort pdf, AlmacenPdfPort almacenPdf, DatosNegocio negocio,
+                            TransaccionPort transaccion, PoliticaAcceso acceso) {
+        return new SeedService(proveedores, productos, compras, facturas, numeracion, cleanup,
+                pdf, almacenPdf, negocio, transaccion, acceso);
     }
 }

@@ -95,13 +95,24 @@ public class CompraService implements CompraUseCase {
     @Override
     public List<CompraDetalle> listar(Actor actor, ConsultarComprasQuery q) {
         acceso.asegurarAdmin(actor, "consultar compras");
+        return conNombre(compras.buscar(filtro(q)));
+    }
+
+    @Override
+    public Pagina<CompraDetalle> listar(Actor actor, ConsultarComprasQuery q, Paginacion paginacion) {
+        acceso.asegurarAdmin(actor, "consultar compras");
+        Pagina<Compra> pagina = compras.buscar(filtro(q), paginacion);
+        return new Pagina<>(conNombre(pagina.contenido()), pagina.total(), pagina.pagina(), pagina.tamano());
+    }
+
+    private FiltroCompras filtro(ConsultarComprasQuery q) {
         LocalDate desde = q.desde() == null || q.desde().isBlank() ? null : Fechas.leer(q.desde(), "fecha inicial");
         LocalDate hasta = q.hasta() == null || q.hasta().isBlank() ? null : Fechas.leer(q.hasta(), "fecha final");
         if (desde != null && hasta != null && desde.isAfter(hasta)) {
             throw new ValorInvalidoException("La fecha inicial no puede ser posterior a la final");
         }
         String codigo = q.codigoProducto() == null || q.codigoProducto().isBlank() ? null : Producto.normalizarCodigo(q.codigoProducto());
-        return conNombre(compras.buscar(new FiltroCompras(q.proveedorId(), desde, hasta, codigo)));
+        return new FiltroCompras(q.proveedorId(), desde, hasta, codigo);
     }
 
     private List<CompraDetalle> conNombre(List<Compra> lista) {

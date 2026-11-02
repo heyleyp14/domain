@@ -8,12 +8,24 @@ import co.edu.unipamplona.ferreteria.domain.model.LineaFactura;
 import co.edu.unipamplona.ferreteria.domain.model.LineaReporte;
 import co.edu.unipamplona.ferreteria.domain.model.ReporteDiario;
 import co.edu.unipamplona.ferreteria.domain.model.ResumenFactura;
+import com.openhtmltopdf.outputdevice.helper.BaseRendererBuilder.FontStyle;
+import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
+import java.util.List;
 import java.util.Locale;
 import org.springframework.stereotype.Component;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
 
-/** Genera la factura y el reporte diario como PDF, con los mismos totales del dominio. */
+/**
+ * Genera la factura y el reporte diario como PDF a partir de plantillas HTML (Thymeleaf)
+ * renderizadas con openhtmltopdf. Los totales vienen del dominio: la plantilla solo los muestra.
+ */
 @Component
 public class GeneradorPdfAdapter implements GeneradorPdfPort {
 
@@ -22,74 +34,100 @@ public class GeneradorPdfAdapter implements GeneradorPdfPort {
     private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final Locale COLOMBIA = Locale.forLanguageTag("es-CO");
 
+    private final TemplateEngine templateEngine;
+    private final String logo;
+
+    public GeneradorPdfAdapter(TemplateEngine templateEngine) {
+        this.templateEngine = templateEngine;
+        this.logo = cargarLogo();
+    }
+
     @Override
     public byte[] factura(Factura factura, DatosNegocio negocio) {
-        PdfSimple pdf = new PdfSimple();
-        encabezado(pdf, negocio);
-        pdf.linea();
-        pdf.linea("FACTURA DE VENTA No. " + factura.getNumero());
-        pdf.linea("Fecha: " + factura.getFecha().atZone(BOGOTA).format(FECHA_HORA));
-        pdf.linea("Cliente: " + factura.getClienteNombre());
-        pdf.linea("Direccion: " + texto(factura.getClienteDireccion()));
-        pdf.linea("Telefono: " + texto(factura.getClienteTelefono()));
-        pdf.linea("Vendedor: " + factura.getVendedor());
-        if (factura.estaAnulada()) {
-            pdf.linea();
-            pdf.linea("*** ANULADA ***");
-            pdf.linea("Motivo: " + texto(factura.getMotivoAnulacion()));
-            pdf.linea("Anulada por: " + texto(factura.getAnuladaPor()));
-        }
-        pdf.linea();
-        pdf.linea("Codigo  Producto  Cant  Precio  IVA  Total");
-        for (LineaFactura linea : factura.getLineas()) {
-            pdf.linea(linea.codigoProducto() + "  " + linea.nombreProducto() + "  " + linea.cantidad() + "  "
-                    + moneda(linea.precioBase()) + "  " + moneda(linea.iva()) + "  " + moneda(linea.total()));
-        }
-        pdf.linea();
-        pdf.linea("Subtotal: " + moneda(factura.subtotal()));
-        pdf.linea("IVA: " + moneda(factura.iva()));
-        pdf.linea("Total: " + moneda(factura.total()));
-        return pdf.construir();
+        Context contexto = new Context(COLOMBIA);
+        contexto.setVariable("negocio", negocio(negocio));
+        contexto.setVariable("factura", factura(factura));
+        contexto.setVariable("logo", logo);
+        return render("factura", contexto);
     }
 
     @Override
     public byte[] reporteDiario(ReporteDiario reporte, DatosNegocio negocio) {
-        PdfSimple pdf = new PdfSimple();
-        encabezado(pdf, negocio);
-        pdf.linea();
-        pdf.linea("REPORTE DIARIO DE VENTAS");
-        pdf.linea("Fecha: " + reporte.fecha().format(FECHA));
-        pdf.linea();
-        if (reporte.sinVentas()) {
-            pdf.linea("Sin ventas registradas en la fecha.");
-            return pdf.construir();
-        }
-        pdf.linea("Facturas emitidas: " + reporte.facturasEmitidas());
-        pdf.linea("Facturas anuladas: " + reporte.facturasAnuladas());
-        pdf.linea("Unidades vendidas: " + reporte.unidadesVendidas());
-        pdf.linea("Subtotal: " + moneda(reporte.subtotal()));
-        pdf.linea("IVA: " + moneda(reporte.iva()));
-        pdf.linea("Total: " + moneda(reporte.total()));
-        pdf.linea();
-        pdf.linea("Producto  Cant  Subtotal  IVA  Total");
-        for (LineaReporte linea : reporte.productos()) {
-            pdf.linea(linea.codigoProducto() + "  " + linea.nombreProducto() + "  " + linea.cantidad() + "  "
-                    + moneda(linea.subtotal()) + "  " + moneda(linea.iva()) + "  " + moneda(linea.total()));
-        }
-        pdf.linea();
-        pdf.linea("Facturas del dia:");
-        for (ResumenFactura resumen : reporte.facturas()) {
-            pdf.linea(resumen.numero() + "  " + resumen.fecha().atZone(BOGOTA).format(FECHA_HORA) + "  "
-                    + resumen.cliente() + "  " + resumen.vendedor() + "  " + moneda(resumen.total())
-                    + (resumen.anulada() ? "  ANULADA" : ""));
-        }
-        return pdf.construir();
+        Context contexto = new Context(COLOMBIA);
+        contexto.setVariable("negocio", negocio(negocio));
+        contexto.setVariable("reporte", reporte(reporte));
+        contexto.setVariable("logo", logo);
+        return render("reporte-diario", contexto);
     }
 
-    private static void encabezado(PdfSimple pdf, DatosNegocio negocio) {
-        pdf.linea(negocio.nombre());
-        pdf.linea(negocio.direccion() + " - " + negocio.ciudad());
-        pdf.linea("Tel: " + negocio.telefono() + "   NIT: " + negocio.identificacion());
+    private byte[] render(String plantilla, Context contexto) {
+        String html = templateEngine.process(plantilla, contexto);
+        try (ByteArrayOutputStream salida = new ByteArrayOutputStream()) {
+            PdfRendererBuilder builder = new PdfRendererBuilder();
+            registrarFuentes(builder);
+            builder.withProducer("Ferreteria Ambiente Murano 3D");
+            builder.useFastMode();
+            builder.withHtmlContent(html, null);
+            builder.toStream(salida);
+            builder.run();
+            return salida.toByteArray();
+        } catch (Exception e) {
+            throw new IllegalStateException("No se pudo generar el PDF de " + plantilla, e);
+        }
+    }
+
+    private static VistasPdf.Negocio negocio(DatosNegocio negocio) {
+        return new VistasPdf.Negocio(texto(negocio.nombre()), texto(negocio.ciudad()), texto(negocio.direccion()),
+                texto(negocio.telefono()), texto(negocio.identificacion()));
+    }
+
+    private static VistasPdf.Factura factura(Factura factura) {
+        List<VistasPdf.LineaFactura> lineas = factura.getLineas().stream()
+                .map(GeneradorPdfAdapter::linea)
+                .toList();
+        return new VistasPdf.Factura(factura.getNumero().valor(),
+                factura.getFecha().atZone(BOGOTA).format(FECHA_HORA),
+                factura.getEstado().name(),
+                texto(factura.getClienteNombre()),
+                texto(factura.getClienteDireccion()),
+                texto(factura.getClienteTelefono()),
+                texto(factura.getVendedor()),
+                factura.estaAnulada(),
+                texto(factura.getMotivoAnulacion()),
+                texto(factura.getAnuladaPor()),
+                lineas,
+                moneda(factura.subtotal()),
+                moneda(factura.iva()),
+                moneda(factura.total()),
+                NumeroALetras.pesos(factura.total()));
+    }
+
+    private static VistasPdf.LineaFactura linea(LineaFactura linea) {
+        return new VistasPdf.LineaFactura(linea.codigoProducto(), linea.nombreProducto(), linea.cantidad(),
+                moneda(linea.precioBase()), moneda(linea.subtotal()), moneda(linea.iva()), moneda(linea.total()));
+    }
+
+    private static VistasPdf.Reporte reporte(ReporteDiario reporte) {
+        List<VistasPdf.LineaReporte> productos = reporte.productos().stream()
+                .map(GeneradorPdfAdapter::lineaReporte)
+                .toList();
+        List<VistasPdf.ResumenFactura> facturas = reporte.facturas().stream()
+                .map(GeneradorPdfAdapter::resumen)
+                .toList();
+        return new VistasPdf.Reporte(reporte.fecha().format(FECHA), reporte.sinVentas(),
+                reporte.facturasEmitidas(), reporte.facturasAnuladas(), reporte.unidadesVendidas(),
+                moneda(reporte.subtotal()), moneda(reporte.iva()), moneda(reporte.total()),
+                productos, facturas);
+    }
+
+    private static VistasPdf.LineaReporte lineaReporte(LineaReporte linea) {
+        return new VistasPdf.LineaReporte(linea.codigoProducto(), linea.nombreProducto(), linea.cantidad(),
+                moneda(linea.subtotal()), moneda(linea.iva()), moneda(linea.total()));
+    }
+
+    private static VistasPdf.ResumenFactura resumen(ResumenFactura resumen) {
+        return new VistasPdf.ResumenFactura(resumen.numero(), resumen.fecha().atZone(BOGOTA).format(FECHA_HORA),
+                texto(resumen.cliente()), texto(resumen.vendedor()), moneda(resumen.total()), resumen.anulada());
     }
 
     private static String moneda(Dinero dinero) {
@@ -98,5 +136,34 @@ public class GeneradorPdfAdapter implements GeneradorPdfPort {
 
     private static String texto(String valor) {
         return valor == null ? "" : valor;
+    }
+
+    private static void registrarFuentes(PdfRendererBuilder builder) {
+        fuente(builder, "/fonts/Lato-Regular.ttf", "Lato", 400);
+        fuente(builder, "/fonts/Lato-Bold.ttf", "Lato", 700);
+        fuente(builder, "/fonts/IBMPlexMono-Regular.ttf", "PlexMono", 400);
+    }
+
+    private static void fuente(PdfRendererBuilder builder, String ruta, String familia, int peso) {
+        builder.useFont(() -> recurso(ruta), familia, peso, FontStyle.NORMAL, true);
+    }
+
+    private static InputStream recurso(String ruta) {
+        InputStream entrada = GeneradorPdfAdapter.class.getResourceAsStream(ruta);
+        if (entrada == null) {
+            throw new IllegalStateException("No se encontro el recurso " + ruta);
+        }
+        return entrada;
+    }
+
+    private static String cargarLogo() {
+        try (InputStream entrada = GeneradorPdfAdapter.class.getResourceAsStream("/images/logo.jpg")) {
+            if (entrada == null) {
+                return null;
+            }
+            return "data:image/jpeg;base64," + Base64.getEncoder().encodeToString(entrada.readAllBytes());
+        } catch (IOException e) {
+            return null;
+        }
     }
 }

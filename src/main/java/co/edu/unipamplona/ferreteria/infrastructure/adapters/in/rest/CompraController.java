@@ -4,8 +4,10 @@ import co.edu.unipamplona.ferreteria.application.port.in.CompraUseCase;
 import co.edu.unipamplona.ferreteria.application.port.in.command.ConsultarComprasQuery;
 import co.edu.unipamplona.ferreteria.application.port.in.command.ItemCompraCommand;
 import co.edu.unipamplona.ferreteria.application.port.in.command.RegistrarCompraCommand;
+import co.edu.unipamplona.ferreteria.application.port.out.Paginacion;
 import co.edu.unipamplona.ferreteria.infrastructure.adapters.in.rest.dto.Peticiones;
 import co.edu.unipamplona.ferreteria.infrastructure.adapters.in.rest.dto.Respuestas.CompraR;
+import co.edu.unipamplona.ferreteria.infrastructure.adapters.in.rest.dto.Respuestas.ComprasR;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,9 +45,11 @@ public class CompraController {
     }
 
     @GetMapping
-    public List<CompraR> listar(@RequestParam(required = false) Long proveedorId, @RequestParam(required = false) String desde,
-                                @RequestParam(required = false) String hasta, @RequestParam(required = false) String producto) {
-        return compras.listar(ActorActual.obtener(), new ConsultarComprasQuery(proveedorId, desde, hasta, producto))
-                .stream().map(CompraR::de).toList();
+    public ComprasR listar(@RequestParam(required = false) Long proveedorId, @RequestParam(required = false) String desde,
+                           @RequestParam(required = false) String hasta, @RequestParam(required = false) String producto,
+                           @RequestParam(defaultValue = "1") int pagina,
+                           @RequestParam(defaultValue = "20") int tamano) {
+        return ComprasR.de(compras.listar(ActorActual.obtener(),
+                new ConsultarComprasQuery(proveedorId, desde, hasta, producto), Paginacion.de(pagina, tamano)));
     }
 }

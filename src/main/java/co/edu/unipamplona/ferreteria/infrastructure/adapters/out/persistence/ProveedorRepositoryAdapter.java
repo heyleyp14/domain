@@ -1,5 +1,7 @@
 package co.edu.unipamplona.ferreteria.infrastructure.adapters.out.persistence;
 
+import co.edu.unipamplona.ferreteria.application.port.out.Pagina;
+import co.edu.unipamplona.ferreteria.application.port.out.Paginacion;
 import co.edu.unipamplona.ferreteria.application.port.out.ProveedorRepositoryPort;
 import co.edu.unipamplona.ferreteria.domain.exception.ProveedorNoEncontradoException;
 import co.edu.unipamplona.ferreteria.domain.model.Proveedor;
@@ -11,6 +13,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,7 +66,18 @@ public class ProveedorRepositoryAdapter implements ProveedorRepositoryPort {
 
     @Override
     public List<Proveedor> buscar(String texto) {
-        String patron = texto == null ? null : "%" + Proveedor.normalizarNombre(texto) + "%";
-        return jpa.buscar(patron).stream().map(mapper::aDominio).toList();
+        return jpa.buscar(patron(texto)).stream().map(mapper::aDominio).toList();
+    }
+
+    @Override
+    public Pagina<Proveedor> buscar(String texto, Paginacion paginacion) {
+        Page<ProveedorEntity> page = jpa.buscar(patron(texto),
+                PageRequest.of(paginacion.pagina() - 1, paginacion.tamano()));
+        return new Pagina<>(page.getContent().stream().map(mapper::aDominio).toList(), page.getTotalElements(),
+                paginacion.pagina(), paginacion.tamano());
+    }
+
+    private String patron(String texto) {
+        return texto == null ? null : "%" + Proveedor.normalizarNombre(texto) + "%";
     }
 }

@@ -39,6 +39,11 @@ NEGOCIO_NIT=
 NEGOCIO_DIRECCION=
 NEGOCIO_TELEFONO=
 NEGOCIO_CIUDAD=Cúcuta
+# Cloudinary. Opcion recomendada: la URL firmada.
+CLOUDINARY_URL=
+# Alternativa sin secret (preset unsigned): nombre de la nube y preset.
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_UPLOAD_PRESET=
 EOF
 
 echo "Created $ENV_FILE"

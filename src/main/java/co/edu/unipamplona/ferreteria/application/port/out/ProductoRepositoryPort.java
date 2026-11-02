@@ -17,5 +17,11 @@ public interface ProductoRepositoryPort {
 
     List<Producto> buscar(FiltroProductos filtro);
 
+    /** Igual que {@link #buscar(FiltroProductos)}, pero devuelve solo una página y el total. */
+    Pagina<Producto> buscar(FiltroProductos filtro, Paginacion paginacion);
+
     List<Producto> buscarPorProveedor(long proveedorId);
+
+    /** Productos de un proveedor, paginados. */
+    Pagina<Producto> buscarPorProveedor(long proveedorId, Paginacion paginacion);
 }

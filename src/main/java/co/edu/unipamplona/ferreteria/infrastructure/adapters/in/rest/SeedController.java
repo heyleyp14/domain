@@ -14,7 +14,8 @@ import org.springframework.web.bind.annotation.RestController;
  * <p>Reinicia la base (borra todo lo existente) y crea 20 registros por cada entidad principal:
  * proveedores, productos, compras y facturas.</p>
  *
- * <p>Requiere autenticación ADMIN (JWT): @see SeedService</p>
+ * <p>Requiere autenticación ADMIN (JWT): @see SeedService. Las facturas generadas publican su PDF
+ * en Cloudinary cuando hay credencial o preset configurado.</p>
  */
 @RestController
 @RequestMapping("/api/seed")

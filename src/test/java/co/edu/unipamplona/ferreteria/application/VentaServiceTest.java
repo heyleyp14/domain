@@ -201,4 +201,42 @@ class VentaServiceTest {
         assertEquals("FACTURA FAC-2026-000001 Ferretería Ambiente Murano 3D", new String(pdf.contenido(), StandardCharsets.UTF_8));
         assertThrows(FacturaNoEncontradaException.class, () -> e.venta.pdf(e.vendedor(), "FAC-2026-000099"));
     }
+
+    @Test
+    @DisplayName("Al emitir, el PDF se publica en el almacén y la factura guarda su URL")
+    void publicaElPdfAlEmitir() {
+        Factura f = e.vender("Ana", item("MAR-01", 1));
+
+        assertNotNull(f.getPdfUrl());
+        assertTrue(f.getPdfUrl().endsWith(".pdf"));
+        assertEquals(List.of("FAC-2026-000001"), e.almacenPdf.publicadas);
+        assertEquals(f.getPdfUrl(), e.venta.consultar(e.vendedor(), "FAC-2026-000001").getPdfUrl());
+    }
+
+    @Test
+    @DisplayName("Si el almacén falla, la venta se completa sin URL y se reintenta al pedir el PDF")
+    void siElAlmacenFallaLaVentaSigue() {
+        e.almacenPdf.fallar(true);
+
+        Factura f = e.vender("Ana", item("MAR-01", 1));
+
+        assertNull(f.getPdfUrl());
+        assertEquals("FAC-2026-000001", e.venta.consultar(e.vendedor(), "FAC-2026-000001").getNumero().valor());
+
+        e.almacenPdf.fallar(false);
+        e.venta.pdf(e.vendedor(), "FAC-2026-000001");
+
+        assertNotNull(e.venta.consultar(e.vendedor(), "FAC-2026-000001").getPdfUrl());
+        assertEquals(1, e.almacenPdf.publicadas.size());
+    }
+
+    @Test
+    @DisplayName("Al anular se vuelve a publicar el PDF porque el documento cambia")
+    void alAnularRePublicaElPdf() {
+        e.vender("Ana", item("MAR-01", 2));
+
+        e.venta.anular(e.admin(), "FAC-2026-000001", "El cliente devolvió el pedido");
+
+        assertEquals(List.of("FAC-2026-000001", "FAC-2026-000001"), e.almacenPdf.publicadas);
+    }
 }

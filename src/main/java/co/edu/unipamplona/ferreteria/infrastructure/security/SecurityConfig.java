@@ -39,6 +39,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/productos/*/comparacion-precios").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST, "/api/facturas/*/anulacion").hasRole("ADMIN")
                 .requestMatchers("/api/reportes/**").hasRole("ADMIN")
+                // El seed de desarrollo reinicia la base: solo ADMIN.
+                .requestMatchers(HttpMethod.POST, "/api/seed").hasRole("ADMIN")
                 // Vender y consultar: cualquier usuario autenticado (ADMIN o USER). El dominio vuelve a verificar el rol.
                 .requestMatchers(HttpMethod.GET, "/api/proveedores", "/api/proveedores/*", "/api/productos", "/api/productos/*")
                         .authenticated()

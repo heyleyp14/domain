@@ -3,6 +3,8 @@ package co.edu.unipamplona.ferreteria.contract;
 import static org.junit.jupiter.api.Assertions.*;
 
 import co.edu.unipamplona.ferreteria.application.port.out.FiltroProductos;
+import co.edu.unipamplona.ferreteria.application.port.out.Pagina;
+import co.edu.unipamplona.ferreteria.application.port.out.Paginacion;
 import co.edu.unipamplona.ferreteria.application.port.out.ProductoRepositoryPort;
 import co.edu.unipamplona.ferreteria.domain.model.Dinero;
 import co.edu.unipamplona.ferreteria.domain.model.Producto;
@@ -96,5 +98,29 @@ public abstract class ProductoRepositoryContractTest {
         assertEquals(List.of("A-01", "B-02"), codigos(repo().buscarPorProveedor(1)));
         assertEquals(List.of("C-03"), codigos(repo().buscarPorProveedor(2)));
         assertTrue(repo().buscarPorProveedor(99).isEmpty());
+    }
+
+    @Test
+    void paginaLaBusquedaYLosProductosDeUnProveedor() {
+        repo().guardar(Producto.registrar("E-05", "E5", new BigDecimal("1"), true, 1, 1L, "a", Datos.AHORA));
+        repo().guardar(Producto.registrar("A-01", "A1", new BigDecimal("1"), true, 1, 1L, "a", Datos.AHORA));
+        repo().guardar(Producto.registrar("C-03", "C3", new BigDecimal("1"), true, 1, 1L, "a", Datos.AHORA));
+        FiltroProductos sinFiltros = new FiltroProductos(null, false, false, Set.of());
+
+        Pagina<Producto> primera = repo().buscar(sinFiltros, Paginacion.de(1, 2));
+        assertEquals(List.of("A-01", "C-03"), codigos(primera.contenido()));
+        assertEquals(3, primera.total());
+        assertEquals(2, primera.totalPaginas());
+
+        Pagina<Producto> segunda = repo().buscar(sinFiltros, Paginacion.de(2, 2));
+        assertEquals(List.of("E-05"), codigos(segunda.contenido()));
+
+        Pagina<Producto> fuera = repo().buscar(sinFiltros, Paginacion.de(9, 2));
+        assertTrue(fuera.contenido().isEmpty());
+        assertEquals(3, fuera.total());
+
+        Pagina<Producto> porProveedor = repo().buscarPorProveedor(1, Paginacion.de(1, 2));
+        assertEquals(2, porProveedor.contenido().size());
+        assertEquals(3, porProveedor.total());
     }
 }

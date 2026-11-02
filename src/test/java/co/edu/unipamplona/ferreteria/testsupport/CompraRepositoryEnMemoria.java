@@ -2,6 +2,8 @@ package co.edu.unipamplona.ferreteria.testsupport;
 
 import co.edu.unipamplona.ferreteria.application.port.out.CompraRepositoryPort;
 import co.edu.unipamplona.ferreteria.application.port.out.FiltroCompras;
+import co.edu.unipamplona.ferreteria.application.port.out.Pagina;
+import co.edu.unipamplona.ferreteria.application.port.out.Paginacion;
 import co.edu.unipamplona.ferreteria.domain.model.Compra;
 import co.edu.unipamplona.ferreteria.domain.model.LineaCompra;
 import co.edu.unipamplona.ferreteria.domain.model.PrecioCompra;
@@ -34,6 +36,11 @@ public class CompraRepositoryEnMemoria implements CompraRepositoryPort {
         }
         r.sort(Comparator.comparing(Compra::getFecha).thenComparing(Compra::getId).reversed());
         return r;
+    }
+
+    @Override
+    public Pagina<Compra> buscar(FiltroCompras f, Paginacion paginacion) {
+        return Pagina.de(buscar(f), paginacion);
     }
 
     @Override

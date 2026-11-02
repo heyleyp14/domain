@@ -1,0 +1,11 @@
+// Init script solo para desarrollo: agrega Spring Boot DevTools al classpath de bootRun sin
+// tocar authcore/build.gradle (R1: el codigo del profesor no se modifica).
+allprojects {
+    afterEvaluate { project ->
+        if (project.plugins.findPlugin('org.springframework.boot') != null) {
+            project.dependencies {
+                add('runtimeOnly', 'org.springframework.boot:spring-boot-devtools')
+            }
+        }
+    }
+}

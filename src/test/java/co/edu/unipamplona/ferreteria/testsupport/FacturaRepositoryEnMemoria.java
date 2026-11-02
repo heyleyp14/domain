@@ -38,6 +38,6 @@ public class FacturaRepositoryEnMemoria implements FacturaRepositoryPort {
     private Factura copia(long id, Factura f) {
         return Factura.reconstruir(id, f.getNumero(), f.getFecha(), f.getClienteNombre(), f.getClienteDireccion(),
                 f.getClienteTelefono(), f.getVendedor(), f.getLineas(), f.getEstado(), f.getAnuladaPor(), f.getAnuladaEn(),
-                f.getMotivoAnulacion());
+                f.getMotivoAnulacion(), f.getPdfUrl());
     }
 }

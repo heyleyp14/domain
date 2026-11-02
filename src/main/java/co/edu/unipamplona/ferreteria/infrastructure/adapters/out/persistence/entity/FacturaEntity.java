@@ -56,6 +56,9 @@ public class FacturaEntity {
     @Column(length = 300)
     private String motivoAnulacion;
 
+    @Column(name = "pdf_url", length = 512)
+    private String pdfUrl;
+
     @OneToMany(mappedBy = "factura", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("posicion ASC")
     private List<LineaFacturaEntity> lineas = new ArrayList<>();
@@ -88,5 +91,7 @@ public class FacturaEntity {
     public void setAnuladaEn(Instant anuladaEn) { this.anuladaEn = anuladaEn; }
     public String getMotivoAnulacion() { return motivoAnulacion; }
     public void setMotivoAnulacion(String motivoAnulacion) { this.motivoAnulacion = motivoAnulacion; }
+    public String getPdfUrl() { return pdfUrl; }
+    public void setPdfUrl(String pdfUrl) { this.pdfUrl = pdfUrl; }
     public List<LineaFacturaEntity> getLineas() { return lineas; }
 }

@@ -1,0 +1,13 @@
+# Contexto de build de domain: no enviar artefactos ni dependencias locales.
+target/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+.git/
+.gradle/
+.idea/
+.vscode/
+.env
+respaldos/
+scripts/evidencia/
+*.log

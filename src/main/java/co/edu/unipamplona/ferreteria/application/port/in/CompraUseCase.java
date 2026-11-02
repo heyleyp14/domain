@@ -2,6 +2,8 @@ package co.edu.unipamplona.ferreteria.application.port.in;
 
 import co.edu.unipamplona.ferreteria.application.port.in.command.ConsultarComprasQuery;
 import co.edu.unipamplona.ferreteria.application.port.in.command.RegistrarCompraCommand;
+import co.edu.unipamplona.ferreteria.application.port.out.Pagina;
+import co.edu.unipamplona.ferreteria.application.port.out.Paginacion;
 import co.edu.unipamplona.ferreteria.domain.model.Actor;
 import java.util.List;
 
@@ -13,4 +15,6 @@ public interface CompraUseCase {
     CompraDetalle consultar(Actor actor, String codigo);
 
     List<CompraDetalle> listar(Actor actor, ConsultarComprasQuery consulta);
+
+    Pagina<CompraDetalle> listar(Actor actor, ConsultarComprasQuery consulta, Paginacion paginacion);
 }

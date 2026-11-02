@@ -3,6 +3,7 @@ package co.edu.unipamplona.ferreteria.application.service;
 import co.edu.unipamplona.ferreteria.application.port.in.CatalogoUseCase;
 import co.edu.unipamplona.ferreteria.application.port.in.ProductoDetalle;
 import co.edu.unipamplona.ferreteria.application.port.in.ProveedorDetalle;
+import co.edu.unipamplona.ferreteria.application.port.in.ProveedorDetallePaginado;
 import co.edu.unipamplona.ferreteria.application.port.in.command.*;
 import co.edu.unipamplona.ferreteria.application.port.out.*;
 import co.edu.unipamplona.ferreteria.domain.exception.*;
@@ -71,6 +72,19 @@ public class CatalogoService implements CatalogoUseCase {
     public List<Proveedor> listarProveedores(Actor actor, String texto) {
         acceso.asegurarUsuario(actor);
         return proveedores.buscar(texto == null || texto.isBlank() ? null : texto.trim());
+    }
+
+    @Override
+    public ProveedorDetallePaginado detalleProveedor(Actor actor, long id, Paginacion paginacion) {
+        acceso.asegurarUsuario(actor);
+        Proveedor p = proveedores.buscarPorId(id).orElseThrow(() -> new ProveedorNoEncontradoException(id));
+        return new ProveedorDetallePaginado(p, productos.buscarPorProveedor(id, paginacion));
+    }
+
+    @Override
+    public Pagina<Proveedor> listarProveedores(Actor actor, String texto, Paginacion paginacion) {
+        acceso.asegurarUsuario(actor);
+        return proveedores.buscar(texto == null || texto.isBlank() ? null : texto.trim(), paginacion);
     }
 
     private void asegurarNombreLibre(String nombre, Long idPropio) {
@@ -153,6 +167,23 @@ public class CatalogoService implements CatalogoUseCase {
         List<ProductoDetalle> r = new ArrayList<>();
         for (Producto p : encontrados) r.add(new ProductoDetalle(p, porId.get(p.getProveedorId())));
         return r;
+    }
+
+    @Override
+    public Pagina<ProductoDetalle> buscarProductos(Actor actor, BuscarProductosQuery q, Paginacion paginacion) {
+        acceso.asegurarUsuario(actor);
+        String texto = q.texto() == null || q.texto().isBlank() ? null : q.texto().trim();
+        Set<Long> proveedoresCoincidentes = new HashSet<>();
+        if (texto != null) proveedores.buscar(texto).forEach(p -> proveedoresCoincidentes.add(p.getId()));
+        Pagina<Producto> pagina = productos.buscar(new FiltroProductos(texto, Boolean.TRUE.equals(q.soloActivos()),
+                Boolean.TRUE.equals(q.bajoStock()), proveedoresCoincidentes), paginacion);
+        Set<Long> ids = new HashSet<>();
+        pagina.contenido().forEach(p -> ids.add(p.getProveedorId()));
+        Map<Long, Proveedor> porId = new HashMap<>();
+        proveedores.buscarPorIds(ids).forEach(p -> porId.put(p.getId(), p));
+        List<ProductoDetalle> r = new ArrayList<>();
+        for (Producto p : pagina.contenido()) r.add(new ProductoDetalle(p, porId.get(p.getProveedorId())));
+        return new Pagina<>(r, pagina.total(), pagina.pagina(), pagina.tamano());
     }
 
     private Producto productoExistente(String codigo) {

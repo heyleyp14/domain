@@ -1,5 +1,7 @@
 package co.edu.unipamplona.ferreteria.testsupport;
 
+import co.edu.unipamplona.ferreteria.application.port.out.Pagina;
+import co.edu.unipamplona.ferreteria.application.port.out.Paginacion;
 import co.edu.unipamplona.ferreteria.application.port.out.ProveedorRepositoryPort;
 import co.edu.unipamplona.ferreteria.domain.model.Proveedor;
 import java.util.*;
@@ -42,6 +44,11 @@ public class ProveedorRepositoryEnMemoria implements ProveedorRepositoryPort {
         }
         r.sort(Comparator.comparing(p -> p.getNombre().toLowerCase(Locale.ROOT)));
         return r;
+    }
+
+    @Override
+    public Pagina<Proveedor> buscar(String texto, Paginacion paginacion) {
+        return Pagina.de(buscar(texto), paginacion);
     }
 
     private Proveedor copia(long id, Proveedor p) {

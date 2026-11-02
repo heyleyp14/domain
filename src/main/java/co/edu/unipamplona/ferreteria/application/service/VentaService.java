@@ -15,6 +15,8 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Vender. Emitir la factura, descontar el stock y consumir el número de factura es UNA sola transacción: si algo
@@ -22,10 +24,13 @@ import java.util.*;
  */
 public class VentaService implements VentaUseCase {
 
+    private static final Logger log = LoggerFactory.getLogger(VentaService.class);
+
     private final FacturaRepositoryPort facturas;
     private final ProductoRepositoryPort productos;
     private final NumeracionFacturaPort numeracion;
     private final GeneradorPdfPort pdf;
+    private final AlmacenPdfPort almacenPdf;
     private final DatosNegocio negocio;
     private final TransaccionPort transaccion;
     private final Clock reloj;
@@ -33,11 +38,13 @@ public class VentaService implements VentaUseCase {
     private final EmisionFacturaService emision = new EmisionFacturaService();
 
     public VentaService(FacturaRepositoryPort facturas, ProductoRepositoryPort productos, NumeracionFacturaPort numeracion,
-                        GeneradorPdfPort pdf, DatosNegocio negocio, TransaccionPort transaccion, Clock reloj, PoliticaAcceso acceso) {
+                        GeneradorPdfPort pdf, AlmacenPdfPort almacenPdf, DatosNegocio negocio,
+                        TransaccionPort transaccion, Clock reloj, PoliticaAcceso acceso) {
         this.facturas = facturas;
         this.productos = productos;
         this.numeracion = numeracion;
         this.pdf = pdf;
+        this.almacenPdf = almacenPdf;
         this.negocio = negocio;
         this.transaccion = transaccion;
         this.reloj = reloj;
@@ -49,7 +56,7 @@ public class VentaService implements VentaUseCase {
         acceso.asegurarUsuario(actor);
         Validacion.exigir("nombre del cliente", c.clienteNombre(), "productos", c.items());
         List<ItemVenta> items = leerItems(c.items());
-        return transaccion.ejecutar(() -> {
+        Factura guardada = transaccion.ejecutar(() -> {
             List<ItemVenta> consolidados = emision.consolidar(items);
             Map<String, Producto> porCodigo = productosBloqueados(consolidados);
             List<LineaFactura> lineas = emision.prepararLineas(consolidados, porCodigo);
@@ -65,6 +72,8 @@ public class VentaService implements VentaUseCase {
             }
             return facturas.guardar(factura);
         });
+        publicarPdf(guardada, null);
+        return guardada;
     }
 
     @Override
@@ -77,7 +86,7 @@ public class VentaService implements VentaUseCase {
     public Factura anular(Actor actor, String numero, String motivo) {
         acceso.asegurarAdmin(actor, "anular facturas");
         Validacion.exigir("número de factura", numero, "motivo", motivo);
-        return transaccion.ejecutar(() -> {
+        Factura anulada = transaccion.ejecutar(() -> {
             String valor = NumeroFactura.desde(numero).valor();
             Factura f = facturas.buscarPorNumeroBloqueando(valor).orElseThrow(() -> new FacturaNoEncontradaException(valor));
             Instant ahora = reloj.instant();
@@ -92,13 +101,38 @@ public class VentaService implements VentaUseCase {
             }
             return facturas.guardar(f);
         });
+        publicarPdf(anulada, null);
+        return anulada;
     }
 
     @Override
     public DocumentoPdf pdf(Actor actor, String numero) {
         acceso.asegurarUsuario(actor);
         Factura f = facturaExistente(numero);
-        return new DocumentoPdf("factura-" + f.getNumero().valor() + ".pdf", pdf.factura(f, negocio));
+        byte[] contenido = pdf.factura(f, negocio);
+        if (f.getPdfUrl() == null || f.getPdfUrl().isBlank()) {
+            publicarPdf(f, contenido);
+        }
+        return new DocumentoPdf("factura-" + f.getNumero().valor() + ".pdf", contenido);
+    }
+
+    /**
+     * Publica el PDF en el almacen externo despues del commit. Es best-effort: una caida de Cloudinary
+     * no puede tumbar una venta ya registrada; la URL se reintenta al pedir el PDF o al anular.
+     */
+    private void publicarPdf(Factura factura, byte[] contenido) {
+        try {
+            byte[] bytes = contenido != null ? contenido : pdf.factura(factura, negocio);
+            String url = almacenPdf.publicarFactura(bytes, factura.getNumero().valor());
+            if (url == null || url.equals(factura.getPdfUrl())) {
+                return;
+            }
+            factura.asignarPdfUrl(url);
+            transaccion.ejecutar(() -> facturas.guardar(factura));
+        } catch (RuntimeException e) {
+            log.warn("No se pudo publicar el PDF de la factura {}: {}",
+                    factura.getNumero() == null ? "?" : factura.getNumero().valor(), e.getMessage());
+        }
     }
 
     private Factura facturaExistente(String numero) {

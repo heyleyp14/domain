@@ -2,6 +2,9 @@ package co.edu.unipamplona.ferreteria.application.service;
 
 import co.edu.unipamplona.ferreteria.application.port.in.SeedResult;
 import co.edu.unipamplona.ferreteria.application.port.in.SeedUseCase;
+import co.edu.unipamplona.ferreteria.application.port.out.AlmacenPdfPort;
+import co.edu.unipamplona.ferreteria.application.port.out.DatosNegocio;
+import co.edu.unipamplona.ferreteria.application.port.out.GeneradorPdfPort;
 import co.edu.unipamplona.ferreteria.application.port.out.TransaccionPort;
 import co.edu.unipamplona.ferreteria.application.port.out.CompraRepositoryPort;
 import co.edu.unipamplona.ferreteria.application.port.out.DataCleanupPort;
@@ -18,6 +21,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Seed de datos de desarrollo: reinicia la base (borra lo existente) y crea 20 registros por entidad.
@@ -26,9 +31,13 @@ import java.util.List;
  * numeración de facturas. Esto evita violaciones de clave foránea por el cascade de las entidades.</p>
  *
  * <p>Datos fijos y reproducibles. El reloj se fija en 2026-10-20 15:00 UTC (hora de Bogotá).</p>
+ *
+ * <p>Si Cloudinary está configurado, cada factura sembrada también genera y publica su PDF con la
+ * plantilla nueva; si no, la factura queda con {@code pdfUrl} nulo y el seed igual termina.</p>
  */
 public class SeedService implements SeedUseCase {
 
+    private static final Logger log = LoggerFactory.getLogger(SeedService.class);
     private static final int CANTIDAD = 20;
     private static final Instant AHORA = Instant.parse("2026-10-20T15:00:00Z");
     /** Fecha de hoy según el reloj fijo (America/Bogota = UTC-5). */
@@ -42,18 +51,26 @@ public class SeedService implements SeedUseCase {
     private final FacturaRepositoryPort facturas;
     private final NumeracionFacturaPort numeracion;
     private final DataCleanupPort cleanup;
+    private final GeneradorPdfPort pdf;
+    private final AlmacenPdfPort almacenPdf;
+    private final DatosNegocio negocio;
     private final TransaccionPort transaccion;
     private final PoliticaAcceso acceso;
 
     public SeedService(ProveedorRepositoryPort proveedores, ProductoRepositoryPort productos,
                        CompraRepositoryPort compras, FacturaRepositoryPort facturas,
-                       NumeracionFacturaPort numeracion, DataCleanupPort cleanup, TransaccionPort transaccion, PoliticaAcceso acceso) {
+                       NumeracionFacturaPort numeracion, DataCleanupPort cleanup,
+                       GeneradorPdfPort pdf, AlmacenPdfPort almacenPdf, DatosNegocio negocio,
+                       TransaccionPort transaccion, PoliticaAcceso acceso) {
         this.proveedores = proveedores;
         this.productos = productos;
         this.compras = compras;
         this.facturas = facturas;
         this.numeracion = numeracion;
         this.cleanup = cleanup;
+        this.pdf = pdf;
+        this.almacenPdf = almacenPdf;
+        this.negocio = negocio;
         this.transaccion = transaccion;
         this.acceso = acceso;
     }
@@ -146,8 +163,27 @@ public class SeedService implements SeedUseCase {
             }
             Factura f = Factura.emitir(NumeroFactura.desde(numero), clientes[i],
                     "Calle " + (i + 1) + " # 1-1", "300" + (1000 + i), "vendedor1", lineas, AHORA);
-            list.add(facturas.guardar(f));
+            list.add(publicarPdf(facturas.guardar(f)));
         }
         return list;
+    }
+
+    /**
+     * Genera el PDF con la plantilla nueva y lo publica en Cloudinary. Si el almacen no esta
+     * configurado o falla, la factura del seed se guarda igual con pdfUrl nulo.
+     */
+    private Factura publicarPdf(Factura factura) {
+        if (!almacenPdf.disponible()) {
+            return factura;
+        }
+        try {
+            byte[] contenido = pdf.factura(factura, negocio);
+            String url = almacenPdf.publicarFactura(contenido, factura.getNumero().valor());
+            factura.asignarPdfUrl(url);
+            return facturas.guardar(factura);
+        } catch (RuntimeException e) {
+            log.warn("Seed: no se pudo publicar el PDF de {}: {}", factura.getNumero().valor(), e.getMessage());
+            return factura;
+        }
     }
 }

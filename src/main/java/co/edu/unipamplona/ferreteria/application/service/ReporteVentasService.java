@@ -1,10 +1,13 @@
 package co.edu.unipamplona.ferreteria.application.service;
 
 import co.edu.unipamplona.ferreteria.application.port.in.DocumentoPdf;
+import co.edu.unipamplona.ferreteria.application.port.in.ReporteDiarioPaginado;
 import co.edu.unipamplona.ferreteria.application.port.in.ReporteVentasUseCase;
 import co.edu.unipamplona.ferreteria.application.port.out.DatosNegocio;
 import co.edu.unipamplona.ferreteria.application.port.out.FacturaRepositoryPort;
 import co.edu.unipamplona.ferreteria.application.port.out.GeneradorPdfPort;
+import co.edu.unipamplona.ferreteria.application.port.out.Pagina;
+import co.edu.unipamplona.ferreteria.application.port.out.Paginacion;
 import co.edu.unipamplona.ferreteria.domain.model.Actor;
 import co.edu.unipamplona.ferreteria.domain.model.Fechas;
 import co.edu.unipamplona.ferreteria.domain.model.ReporteDiario;
@@ -43,6 +46,12 @@ public class ReporteVentasService implements ReporteVentasUseCase {
         Instant desde = dia.atStartOfDay(zona).toInstant();
         Instant hasta = dia.plusDays(1).atStartOfDay(zona).toInstant();
         return armador.construir(dia, facturas.buscarEmitidasEntre(desde, hasta));
+    }
+
+    @Override
+    public ReporteDiarioPaginado diario(Actor actor, String fecha, Paginacion productos, Paginacion facturas) {
+        ReporteDiario r = diario(actor, fecha);
+        return new ReporteDiarioPaginado(r, Pagina.de(r.productos(), productos), Pagina.de(r.facturas(), facturas));
     }
 
     @Override

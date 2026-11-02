@@ -1,6 +1,7 @@
 package co.edu.unipamplona.ferreteria.infrastructure.adapters.in.rest;
 
 import co.edu.unipamplona.ferreteria.application.port.in.ReporteVentasUseCase;
+import co.edu.unipamplona.ferreteria.application.port.out.Paginacion;
 import co.edu.unipamplona.ferreteria.infrastructure.adapters.in.rest.dto.Respuestas.ReporteDiarioR;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,8 +21,13 @@ public class ReporteController {
     }
 
     @GetMapping("/ventas-diarias")
-    public ReporteDiarioR diario(@RequestParam(required = false) String fecha) {
-        return ReporteDiarioR.de(reportes.diario(ActorActual.obtener(), fecha));
+    public ReporteDiarioR diario(@RequestParam(required = false) String fecha,
+                                 @RequestParam(defaultValue = "1") int paginaProductos,
+                                 @RequestParam(defaultValue = "20") int tamanoProductos,
+                                 @RequestParam(defaultValue = "1") int paginaFacturas,
+                                 @RequestParam(defaultValue = "20") int tamanoFacturas) {
+        return ReporteDiarioR.de(reportes.diario(ActorActual.obtener(), fecha,
+                Paginacion.de(paginaProductos, tamanoProductos), Paginacion.de(paginaFacturas, tamanoFacturas)));
     }
 
     @GetMapping("/ventas-diarias/pdf")

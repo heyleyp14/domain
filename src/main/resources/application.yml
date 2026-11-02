@@ -21,6 +21,12 @@ seguridad:
 
 ferreteria:
   zona-horaria: America/Bogota
+  # Cloudinary: imagenes de usuario (AuthCore) y PDFs de factura (este servicio).
+  # La credencial completa se entrega por variable de entorno; nunca se escribe aqui.
+  cloudinary:
+    url: ${CLOUDINARY_URL:}
+    cloud-name: ${CLOUDINARY_CLOUD_NAME:}
+    upload-preset: ${CLOUDINARY_UPLOAD_PRESET:}
   # Datos del negocio que se imprimen en la factura y en los reportes PDF. Se pueden cambiar por variables de entorno.
   negocio:
     nombre: ${NEGOCIO_NOMBRE:Ferretería Ambiente Murano 3D}

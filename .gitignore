@@ -17,3 +17,7 @@ scripts/evidencia/
 respaldos/
 # Local AI runtime state
 .atl/
+
+# Local design tooling
+.taste-skill/
+frontend/design-reference/

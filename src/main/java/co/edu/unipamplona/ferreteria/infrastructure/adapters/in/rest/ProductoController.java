@@ -5,6 +5,7 @@ import co.edu.unipamplona.ferreteria.application.port.in.ComparacionPreciosUseCa
 import co.edu.unipamplona.ferreteria.application.port.in.command.BuscarProductosQuery;
 import co.edu.unipamplona.ferreteria.application.port.in.command.EditarProductoCommand;
 import co.edu.unipamplona.ferreteria.application.port.in.command.RegistrarProductoCommand;
+import co.edu.unipamplona.ferreteria.application.port.out.Paginacion;
 import co.edu.unipamplona.ferreteria.infrastructure.adapters.in.rest.dto.Peticiones;
 import co.edu.unipamplona.ferreteria.infrastructure.adapters.in.rest.dto.Respuestas.BusquedaProductosR;
 import co.edu.unipamplona.ferreteria.infrastructure.adapters.in.rest.dto.Respuestas.ComparacionR;
@@ -58,8 +59,11 @@ public class ProductoController {
     @GetMapping
     public BusquedaProductosR buscar(@RequestParam(required = false) String q,
                                      @RequestParam(required = false) Boolean soloActivos,
-                                     @RequestParam(required = false) Boolean bajoStock) {
-        return BusquedaProductosR.de(catalogo.buscarProductos(ActorActual.obtener(), new BuscarProductosQuery(q, soloActivos, bajoStock)));
+                                     @RequestParam(required = false) Boolean bajoStock,
+                                     @RequestParam(defaultValue = "1") int pagina,
+                                     @RequestParam(defaultValue = "20") int tamano) {
+        return BusquedaProductosR.de(catalogo.buscarProductos(ActorActual.obtener(),
+                new BuscarProductosQuery(q, soloActivos, bajoStock), Paginacion.de(pagina, tamano)));
     }
 
     @GetMapping("/{codigo}")
@@ -69,7 +73,9 @@ public class ProductoController {
 
     /** Solo ADMIN: el precio que cobra cada proveedor por este producto. */
     @GetMapping("/{codigo}/comparacion-precios")
-    public ComparacionR compararPrecios(@PathVariable String codigo) {
-        return ComparacionR.de(comparacion.comparar(ActorActual.obtener(), codigo));
+    public ComparacionR compararPrecios(@PathVariable String codigo,
+                                        @RequestParam(defaultValue = "1") int pagina,
+                                        @RequestParam(defaultValue = "20") int tamano) {
+        return ComparacionR.de(comparacion.comparar(ActorActual.obtener(), codigo, Paginacion.de(pagina, tamano)));
     }
 }

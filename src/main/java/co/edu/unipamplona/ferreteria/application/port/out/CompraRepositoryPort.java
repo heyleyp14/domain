@@ -14,6 +14,9 @@ public interface CompraRepositoryPort {
 
     List<Compra> buscar(FiltroCompras filtro);
 
+    /** Igual que {@link #buscar(FiltroCompras)}, pero devuelve solo una página y el total. */
+    Pagina<Compra> buscar(FiltroCompras filtro, Paginacion paginacion);
+
     /** Precios de compra registrados de un producto, de todos los proveedores. */
     List<PrecioCompra> buscarPreciosPorProducto(String codigo);
 }

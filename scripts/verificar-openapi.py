@@ -13,6 +13,9 @@ PATH_VAR = re.compile(r"\{[^}]+\}")
 def routes_in_code():
     routes = set()
     for path in glob.glob("src/main/java/**/adapters/in/rest/*Controller.java", recursive=True):
+        # Endpoint de desarrollo que reinicia la base; no forma parte del contrato público.
+        if path.endswith("SeedController.java"):
+            continue
         source = open(path, encoding="utf-8").read()
         base = re.search(r'@RequestMapping\("([^"]+)"\)', source).group(1)
         for method, sub in re.findall(r'@(Get|Post|Put|Delete)Mapping(?:\("([^"]*)"\))?', source):

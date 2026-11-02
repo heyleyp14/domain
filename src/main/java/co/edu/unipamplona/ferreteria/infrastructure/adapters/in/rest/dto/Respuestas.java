@@ -1,8 +1,11 @@
 package co.edu.unipamplona.ferreteria.infrastructure.adapters.in.rest.dto;
 
+import co.edu.unipamplona.ferreteria.application.port.in.ComparacionPreciosPaginada;
 import co.edu.unipamplona.ferreteria.application.port.in.CompraDetalle;
 import co.edu.unipamplona.ferreteria.application.port.in.ProductoDetalle;
-import co.edu.unipamplona.ferreteria.application.port.in.ProveedorDetalle;
+import co.edu.unipamplona.ferreteria.application.port.in.ProveedorDetallePaginado;
+import co.edu.unipamplona.ferreteria.application.port.in.ReporteDiarioPaginado;
+import co.edu.unipamplona.ferreteria.application.port.out.Pagina;
 import co.edu.unipamplona.ferreteria.domain.model.Auditoria;
 import co.edu.unipamplona.ferreteria.domain.model.ComparacionPrecios;
 import co.edu.unipamplona.ferreteria.domain.model.Factura;
@@ -43,10 +46,12 @@ public final class Respuestas {
         }
     }
 
-    public record ProveedorDetalleR(ProveedorR proveedor, int totalProductos, List<ProductoResumenR> productos) {
-        public static ProveedorDetalleR de(ProveedorDetalle d) {
-            return new ProveedorDetalleR(ProveedorR.de(d.proveedor()), d.productos().size(),
-                    d.productos().stream().map(ProductoResumenR::de).toList());
+    public record ProveedorDetalleR(ProveedorR proveedor, long totalProductos, int pagina, int tamano, int totalPaginas,
+                                    List<ProductoResumenR> productos) {
+        public static ProveedorDetalleR de(ProveedorDetallePaginado d) {
+            return new ProveedorDetalleR(ProveedorR.de(d.proveedor()), d.productos().total(), d.productos().pagina(),
+                    d.productos().tamano(), d.productos().totalPaginas(),
+                    d.productos().contenido().stream().map(ProductoResumenR::de).toList());
         }
     }
 
@@ -61,10 +66,26 @@ public final class Respuestas {
     }
 
     /** Búsqueda de productos: si no hay resultados lo dice con un mensaje claro en vez de fallar. */
-    public record BusquedaProductosR(int total, String mensaje, List<ProductoR> productos) {
-        public static BusquedaProductosR de(List<ProductoDetalle> lista) {
-            return new BusquedaProductosR(lista.size(), lista.isEmpty() ? "No se encontraron productos" : null,
-                    lista.stream().map(ProductoR::de).toList());
+    public record BusquedaProductosR(long total, int pagina, int tamano, int totalPaginas, String mensaje,
+                                     List<ProductoR> productos) {
+        public static BusquedaProductosR de(Pagina<ProductoDetalle> p) {
+            return new BusquedaProductosR(p.total(), p.pagina(), p.tamano(), p.totalPaginas(),
+                    p.total() == 0 ? "No se encontraron productos" : null,
+                    p.contenido().stream().map(ProductoR::de).toList());
+        }
+    }
+
+    public record ProveedoresR(long total, int pagina, int tamano, int totalPaginas, List<ProveedorR> proveedores) {
+        public static ProveedoresR de(Pagina<Proveedor> p) {
+            return new ProveedoresR(p.total(), p.pagina(), p.tamano(), p.totalPaginas(),
+                    p.contenido().stream().map(ProveedorR::de).toList());
+        }
+    }
+
+    public record ComprasR(long total, int pagina, int tamano, int totalPaginas, List<CompraR> compras) {
+        public static ComprasR de(Pagina<CompraDetalle> p) {
+            return new ComprasR(p.total(), p.pagina(), p.tamano(), p.totalPaginas(),
+                    p.contenido().stream().map(CompraR::de).toList());
         }
     }
 
@@ -78,12 +99,12 @@ public final class Respuestas {
 
     public record FacturaR(String numero, Instant fecha, String estado, String clienteNombre, String clienteDireccion,
                            String clienteTelefono, String vendedor, List<LineaFacturaR> lineas, BigDecimal subtotal, BigDecimal iva,
-                           BigDecimal total, String anuladaPor, Instant anuladaEn, String motivoAnulacion) {
+                           BigDecimal total, String anuladaPor, Instant anuladaEn, String motivoAnulacion, String pdfUrl) {
         public static FacturaR de(Factura f) {
             return new FacturaR(f.getNumero().valor(), f.getFecha(), f.getEstado().name(), f.getClienteNombre(),
                     f.getClienteDireccion(), f.getClienteTelefono(), f.getVendedor(),
                     f.getLineas().stream().map(LineaFacturaR::de).toList(), f.subtotal().valor(), f.iva().valor(), f.total().valor(),
-                    f.getAnuladaPor(), f.getAnuladaEn(), f.getMotivoAnulacion());
+                    f.getAnuladaPor(), f.getAnuladaEn(), f.getMotivoAnulacion(), f.getPdfUrl());
         }
     }
 
@@ -105,14 +126,16 @@ public final class Respuestas {
     public record OfertaR(long proveedorId, String proveedorNombre, BigDecimal ultimoPrecio, LocalDate fechaUltimaCompra,
                           BigDecimal menorPrecioHistorico, int compras, boolean esMenor) { }
 
-    public record ComparacionR(String codigoProducto, String nombreProducto, String mensaje, List<OfertaR> ofertas) {
-        public static ComparacionR de(ComparacionPrecios c) {
-            List<OfertaR> o = c.ofertas().stream()
+    public record ComparacionR(String codigoProducto, String nombreProducto, String mensaje, long totalOfertas,
+                               int pagina, int tamano, int totalPaginas, List<OfertaR> ofertas) {
+        public static ComparacionR de(ComparacionPreciosPaginada c) {
+            List<OfertaR> o = c.ofertas().contenido().stream()
                     .map(x -> new OfertaR(x.proveedorId(), x.proveedorNombre(), x.ultimoPrecio().valor(), x.fechaUltimaCompra(),
                             x.menorPrecioHistorico().valor(), x.compras(), x.esMenor()))
                     .toList();
             return new ComparacionR(c.codigoProducto(), c.nombreProducto(),
-                    o.isEmpty() ? "Este producto aún no tiene compras registradas" : null, o);
+                    c.ofertas().total() == 0 ? "Este producto aún no tiene compras registradas" : null,
+                    c.ofertas().total(), c.ofertas().pagina(), c.ofertas().tamano(), c.ofertas().totalPaginas(), o);
         }
     }
 
@@ -129,13 +152,20 @@ public final class Respuestas {
     }
 
     public record ReporteDiarioR(LocalDate fecha, String mensaje, int facturasEmitidas, int facturasAnuladas, int unidadesVendidas,
-                                 BigDecimal subtotal, BigDecimal iva, BigDecimal total, List<LineaReporteR> productos,
+                                 BigDecimal subtotal, BigDecimal iva, BigDecimal total,
+                                 long productosTotal, int paginaProductos, int tamanoProductos, int totalPaginasProductos,
+                                 List<LineaReporteR> productos,
+                                 long facturasTotal, int paginaFacturas, int tamanoFacturas, int totalPaginasFacturas,
                                  List<ResumenFacturaR> facturas) {
-        public static ReporteDiarioR de(ReporteDiario r) {
+        public static ReporteDiarioR de(ReporteDiarioPaginado p) {
+            ReporteDiario r = p.reporte();
             return new ReporteDiarioR(r.fecha(), r.sinVentas() ? "No se registraron ventas en esta fecha" : null,
                     r.facturasEmitidas(), r.facturasAnuladas(), r.unidadesVendidas(), r.subtotal().valor(), r.iva().valor(),
-                    r.total().valor(), r.productos().stream().map(LineaReporteR::de).toList(),
-                    r.facturas().stream().map(ResumenFacturaR::de).toList());
+                    r.total().valor(),
+                    p.productos().total(), p.productos().pagina(), p.productos().tamano(), p.productos().totalPaginas(),
+                    p.productos().contenido().stream().map(LineaReporteR::de).toList(),
+                    p.facturas().total(), p.facturas().pagina(), p.facturas().tamano(), p.facturas().totalPaginas(),
+                    p.facturas().contenido().stream().map(ResumenFacturaR::de).toList());
         }
     }
 }

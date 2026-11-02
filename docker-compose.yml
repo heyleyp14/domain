@@ -29,6 +29,9 @@ services:
       SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-authcore}
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:?define MYSQL_PASSWORD in .env}
       JWT_SECRET: ${JWT_SECRET:?define JWT_SECRET in .env}
+      CLOUDINARY_URL: ${CLOUDINARY_URL:-}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_UPLOAD_PRESET: ${CLOUDINARY_UPLOAD_PRESET:-}
     depends_on:
       authcore-db:
         condition: service_healthy
@@ -67,6 +70,9 @@ services:
       NEGOCIO_DIRECCION: ${NEGOCIO_DIRECCION:-}
       NEGOCIO_TELEFONO: ${NEGOCIO_TELEFONO:-}
       NEGOCIO_NIT: ${NEGOCIO_NIT:-}
+      CLOUDINARY_URL: ${CLOUDINARY_URL:-}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_UPLOAD_PRESET: ${CLOUDINARY_UPLOAD_PRESET:-}
     depends_on:
       domain-db:
         condition: service_healthy

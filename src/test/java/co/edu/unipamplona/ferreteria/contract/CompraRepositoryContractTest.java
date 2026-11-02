@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import co.edu.unipamplona.ferreteria.application.port.out.CompraRepositoryPort;
 import co.edu.unipamplona.ferreteria.application.port.out.FiltroCompras;
+import co.edu.unipamplona.ferreteria.application.port.out.Pagina;
+import co.edu.unipamplona.ferreteria.application.port.out.Paginacion;
 import co.edu.unipamplona.ferreteria.domain.model.*;
 import co.edu.unipamplona.ferreteria.testsupport.Datos;
 import java.time.LocalDate;
@@ -71,4 +73,24 @@ public abstract class CompraRepositoryContractTest {
     }
 
     private List<Long> ids(FiltroCompras f) { return repo().buscar(f).stream().map(Compra::getId).toList(); }
+
+    @Test
+    void paginaElHistorial() {
+        Compra c1 = repo().guardar(compra(1, "2026-09-01", l("MAR-01", 1, "100")));
+        Compra c2 = repo().guardar(compra(2, "2026-09-15", l("MAR-01", 1, "110")));
+        Compra c3 = repo().guardar(compra(1, "2026-10-01", l("CLA-01", 1, "120")));
+        FiltroCompras sinFiltros = new FiltroCompras(null, null, null, null);
+
+        Pagina<Compra> primera = repo().buscar(sinFiltros, Paginacion.de(1, 2));
+        assertEquals(3, primera.total());
+        assertEquals(2, primera.totalPaginas());
+        assertEquals(List.of(c3.getId(), c2.getId()), primera.contenido().stream().map(Compra::getId).toList());
+
+        Pagina<Compra> segunda = repo().buscar(sinFiltros, Paginacion.de(2, 2));
+        assertEquals(List.of(c1.getId()), segunda.contenido().stream().map(Compra::getId).toList());
+
+        Pagina<Compra> fuera = repo().buscar(sinFiltros, Paginacion.de(9, 2));
+        assertTrue(fuera.contenido().isEmpty());
+        assertEquals(3, fuera.total());
+    }
 }

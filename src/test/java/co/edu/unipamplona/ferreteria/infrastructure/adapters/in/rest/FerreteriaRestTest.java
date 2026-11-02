@@ -186,6 +186,37 @@ public class FerreteriaRestTest {
     }
 
     @Test
+    @DisplayName("Las listas se paginan con pagina y tamano y devuelven el total")
+    void paginacion() throws Exception {
+        String marca = "PAG" + (System.nanoTime() % 100000);
+        long prov = crearProveedor("Proveedor " + marca);
+        crearProducto(marca + "-01", "1000", false, 1, prov);
+        crearProducto(marca + "-02", "1000", false, 1, prov);
+        crearProducto(marca + "-03", "1000", false, 1, prov);
+
+        mvc.perform(con(get("/api/productos?q=" + marca + "&pagina=1&tamano=2"), vendedor(), null))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(3))
+                .andExpect(jsonPath("$.pagina").value(1))
+                .andExpect(jsonPath("$.tamano").value(2))
+                .andExpect(jsonPath("$.totalPaginas").value(2))
+                .andExpect(jsonPath("$.productos.length()").value(2));
+
+        mvc.perform(con(get("/api/productos?q=" + marca + "&pagina=2&tamano=2"), vendedor(), null))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.productos.length()").value(1))
+                .andExpect(jsonPath("$.productos[0].codigo").value(marca + "-03"));
+
+        mvc.perform(con(get("/api/proveedores?q=" + marca + "&pagina=1&tamano=1"), vendedor(), null))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.proveedores.length()").value(1));
+
+        mvc.perform(con(get("/api/productos?pagina=0"), vendedor(), null))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     @DisplayName("Desactivar un producto lo saca de la venta (409) y activarlo lo devuelve")
     void productoDesactivado() throws Exception {
         long prov = crearProveedor("Proveedor Estado " + System.nanoTime());

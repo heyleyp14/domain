@@ -3,9 +3,11 @@ package co.edu.unipamplona.ferreteria.infrastructure.adapters.in.rest;
 import co.edu.unipamplona.ferreteria.application.port.in.CatalogoUseCase;
 import co.edu.unipamplona.ferreteria.application.port.in.command.EditarProveedorCommand;
 import co.edu.unipamplona.ferreteria.application.port.in.command.RegistrarProveedorCommand;
+import co.edu.unipamplona.ferreteria.application.port.out.Paginacion;
 import co.edu.unipamplona.ferreteria.infrastructure.adapters.in.rest.dto.Peticiones;
 import co.edu.unipamplona.ferreteria.infrastructure.adapters.in.rest.dto.Respuestas.ProveedorDetalleR;
 import co.edu.unipamplona.ferreteria.infrastructure.adapters.in.rest.dto.Respuestas.ProveedorR;
+import co.edu.unipamplona.ferreteria.infrastructure.adapters.in.rest.dto.Respuestas.ProveedoresR;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,12 +45,16 @@ public class ProveedorController {
     }
 
     @GetMapping
-    public List<ProveedorR> listar(@RequestParam(required = false) String q) {
-        return catalogo.listarProveedores(ActorActual.obtener(), q).stream().map(ProveedorR::de).toList();
+    public ProveedoresR listar(@RequestParam(required = false) String q,
+                               @RequestParam(defaultValue = "1") int pagina,
+                               @RequestParam(defaultValue = "20") int tamano) {
+        return ProveedoresR.de(catalogo.listarProveedores(ActorActual.obtener(), q, Paginacion.de(pagina, tamano)));
     }
 
     @GetMapping("/{id}")
-    public ProveedorDetalleR detalle(@PathVariable long id) {
-        return ProveedorDetalleR.de(catalogo.detalleProveedor(ActorActual.obtener(), id));
+    public ProveedorDetalleR detalle(@PathVariable long id,
+                                     @RequestParam(defaultValue = "1") int pagina,
+                                     @RequestParam(defaultValue = "20") int tamano) {
+        return ProveedorDetalleR.de(catalogo.detalleProveedor(ActorActual.obtener(), id, Paginacion.de(pagina, tamano)));
     }
 }

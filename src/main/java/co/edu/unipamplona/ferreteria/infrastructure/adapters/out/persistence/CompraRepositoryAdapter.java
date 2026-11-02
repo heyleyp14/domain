@@ -2,6 +2,8 @@ package co.edu.unipamplona.ferreteria.infrastructure.adapters.out.persistence;
 
 import co.edu.unipamplona.ferreteria.application.port.out.CompraRepositoryPort;
 import co.edu.unipamplona.ferreteria.application.port.out.FiltroCompras;
+import co.edu.unipamplona.ferreteria.application.port.out.Pagina;
+import co.edu.unipamplona.ferreteria.application.port.out.Paginacion;
 import co.edu.unipamplona.ferreteria.domain.exception.CompraNoEncontradaException;
 import co.edu.unipamplona.ferreteria.domain.model.Compra;
 import co.edu.unipamplona.ferreteria.domain.model.Dinero;
@@ -12,6 +14,8 @@ import co.edu.unipamplona.ferreteria.infrastructure.adapters.out.persistence.map
 import co.edu.unipamplona.ferreteria.infrastructure.adapters.out.persistence.repository.CompraJpaRepository;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,6 +54,14 @@ public class CompraRepositoryAdapter implements CompraRepositoryPort {
         return jpa.buscar(f.proveedorId(), f.desde(), f.hasta(), f.codigoProducto()).stream()
                 .map(mapper::aDominio)
                 .toList();
+    }
+
+    @Override
+    public Pagina<Compra> buscar(FiltroCompras f, Paginacion paginacion) {
+        Page<CompraEntity> page = jpa.buscar(f.proveedorId(), f.desde(), f.hasta(), f.codigoProducto(),
+                PageRequest.of(paginacion.pagina() - 1, paginacion.tamano()));
+        return new Pagina<>(page.getContent().stream().map(mapper::aDominio).toList(), page.getTotalElements(),
+                paginacion.pagina(), paginacion.tamano());
     }
 
     @Override

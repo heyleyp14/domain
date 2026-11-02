@@ -18,4 +18,7 @@ public interface ProveedorRepositoryPort {
     List<Proveedor> buscarPorIds(Collection<Long> ids);
 
     List<Proveedor> buscar(String texto);
+
+    /** Igual que {@link #buscar(String)}, pero devuelve solo una página y el total. */
+    Pagina<Proveedor> buscar(String texto, Paginacion paginacion);
 }

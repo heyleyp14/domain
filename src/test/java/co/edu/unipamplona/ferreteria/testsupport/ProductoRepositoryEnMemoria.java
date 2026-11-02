@@ -1,6 +1,8 @@
 package co.edu.unipamplona.ferreteria.testsupport;
 
 import co.edu.unipamplona.ferreteria.application.port.out.FiltroProductos;
+import co.edu.unipamplona.ferreteria.application.port.out.Pagina;
+import co.edu.unipamplona.ferreteria.application.port.out.Paginacion;
 import co.edu.unipamplona.ferreteria.application.port.out.ProductoRepositoryPort;
 import co.edu.unipamplona.ferreteria.domain.model.Producto;
 import java.util.*;
@@ -54,6 +56,16 @@ public class ProductoRepositoryEnMemoria implements ProductoRepositoryPort {
         for (Producto p : filas.values()) if (p.getProveedorId() == proveedorId) r.add(copia(p.getId(), p));
         r.sort(Comparator.comparing((Producto p) -> p.getNombre().toLowerCase(Locale.ROOT)).thenComparing(Producto::getCodigo));
         return r;
+    }
+
+    @Override
+    public Pagina<Producto> buscar(FiltroProductos f, Paginacion paginacion) {
+        return Pagina.de(buscar(f), paginacion);
+    }
+
+    @Override
+    public Pagina<Producto> buscarPorProveedor(long proveedorId, Paginacion paginacion) {
+        return Pagina.de(buscarPorProveedor(proveedorId), paginacion);
     }
 
     private Producto copia(long id, Producto p) {
