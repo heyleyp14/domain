@@ -81,6 +81,51 @@ Variantes del compose (misma carpeta `domain/`):
 El perfil `SPRING_PROFILES_ACTIVE=prod` del compose significa **PostgreSQL**, no un despliegue real.
 La guía de despliegue está en `despliegue-aws.md`.
 
+## Variables de entorno (`.env`)
+
+El archivo va en **`domain/.env`** (nunca en `authcore/`) y está en `.gitignore`: no lo commitees. El
+compose de `domain` se lo entrega a los dos servicios, así que el JWT es el mismo para ambos.
+
+### Cómo obtenerlo
+
+| Forma | Cuándo usarla | Qué hace |
+|---|---|---|
+| `./scripts/generar-env.sh` | Caso normal | Crea secretos nuevos y `ADMIN_PASSWORD=admin123`. Si `.env` ya existe, no lo toca |
+| Copiar un `.env` existente | Replicar la misma demo (mismo Cloudinary) | Conserva la pareja JWT y un `ADMIN_PASSWORD` que exista en la base de AuthCore |
+
+### Claves
+
+| Clave | ¿Obligatoria? | Quién la usa | Nota |
+|---|---|---|---|
+| `JWT_SECRET` | Sí | AuthCore (firma) | 32+ bytes; debe corresponder a `JWT_SECRET_BASE64` |
+| `JWT_SECRET_BASE64` | Sí | domain (valida) | El mismo secreto en Base64; el compose no arranca sin ella |
+| `MYSQL_ROOT_PASSWORD` | Sí | compose | El compose la exige (`:?`) |
+| `MYSQL_PASSWORD` | Sí | compose | Usuario `authcore` de MySQL |
+| `POSTGRES_PASSWORD` | Sí | compose | PostgreSQL del dominio |
+| `MYSQL_DATABASE` | Default `authcoredb` | AuthCore | |
+| `MYSQL_USER` | Default `authcore` | AuthCore | |
+| `POSTGRES_DB` | Default `ferreteria` | domain | |
+| `POSTGRES_USER` | Default `ferreteria` | domain | |
+| `ADMIN_PASSWORD` | Sí para scripts | `seed.sh`, `humo.sh` | Debe coincidir con el admin real de AuthCore; en una base nueva es `admin123` |
+| `NEGOCIO_NOMBRE`, `NEGOCIO_CIUDAD` | Opcional | PDFs | Defaults del script |
+| `NEGOCIO_NIT`, `NEGOCIO_DIRECCION`, `NEGOCIO_TELEFONO` | Opcional | PDFs | Vacíos por defecto |
+| `CLOUDINARY_URL` | Opcional | PDFs e imágenes | Modo firmado |
+| `CLOUDINARY_CLOUD_NAME` + `CLOUDINARY_UPLOAD_PRESET` | Opcional | PDFs e imágenes | Modo unsigned; alternativa a `CLOUDINARY_URL` |
+
+`./scripts/verificar-secreto.sh` comprueba que la pareja JWT coincide. `.env.example` es solo una
+plantilla; la fuente de verdad es `scripts/generar-env.sh`.
+
+### Cloudinary es opcional
+
+Sin credenciales la demo se ve igual: el seed, la gráfica, el avatar del admin (URL pública) y la
+descarga de PDFs siguen funcionando. Lo que cambia:
+
+- Los PDFs no quedan publicados en `pdfUrl` (se generan al descargarlos).
+- `POST /api/auth/me/image` responde 503 y no se puede cambiar la foto desde **Perfil**.
+
+Para la paridad total comparte `CLOUDINARY_CLOUD_NAME` + `CLOUDINARY_UPLOAD_PRESET` (unsigned) o una
+`CLOUDINARY_URL` firmada, por un canal privado. No pegues secretos en el chat ni en git.
+
 ## Sembrar la demo
 
 El seed se ejecuta **a mano**; no hay tareas automáticas.
