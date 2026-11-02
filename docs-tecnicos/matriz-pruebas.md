@@ -7,7 +7,7 @@ copiado **textual**, con la prueba que lo demuestra. Total: **61 criterios** · 
 
 | Conjunto | Comando (desde `domain/`) | Resultado |
 |---|---|---|
-| Domain: unitarias, casos de uso, contrato (memoria y JPA), REST, concurrencia, PDF, JWT, ArchUnit | `mvn -B verify` | 166 pruebas, 0 fallas, 0 errores |
+| Domain: unitarias, casos de uso, contrato (memoria y JPA), REST, concurrencia, PDF, JWT, ArchUnit | `mvn -B verify` | todas las pruebas, 0 fallas, 0 errores |
 | Punta a punta HU-1 a HU-12 con los servicios reales | `./scripts/humo.sh` | 50 pasos OK, código 0 |
 | Criterios de AuthCore que requieren mirar la base y los logs | `./scripts/verificar-authcore.sh` | 9 OK, 0 fallas, 5 brechas D2 |
 | Rendimiento de búsqueda (RNF-07) | `./scripts/rendimiento.sh` | Percentil 95: 0,065 s con 5.000 productos |

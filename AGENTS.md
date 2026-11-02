@@ -16,6 +16,10 @@ POS e inventario de **Ferretería Ambiente Murano 3D** (Cúcuta). Dos piezas en 
 El servicio de autenticación (AuthCore, puerto 8081) vive en un repositorio aparte y no está aquí.
 En desarrollo, el proxy de Vite envía `/api/auth/*` a AuthCore y `/api/*` a este servicio.
 
+Para levantar la demo completa (los dos repos como hermanos, datos sembrados y login), sigue
+`docs-tecnicos/puesta-en-marcha-demo.md`. Es la fuente única: cualquier otra nota sobre el arranque
+conjunto debe remitir allí.
+
 ## Comandos
 
 ### Backend
@@ -62,13 +66,22 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d     # sin -
 - Las imágenes de desarrollo (`pi-*-dev`) no pisan las de producción. La primera ejecución descarga
   dependencias; quedan en volúmenes (`maven-cache`, `gradle-cache`).
 
-### Sistema completo
+### Sistema completo (con AuthCore y el seed de la demo)
+
+Requiere `authcore/` clonado junto a `domain/`. La guía detallada está en
+`docs-tecnicos/puesta-en-marcha-demo.md`.
 
 ```bash
 cd domain
 ./scripts/generar-env.sh
-docker compose up -d --build   # frontend en http://localhost:8080
+docker compose -f docker-compose.yml -f docker-compose.dev.yml build   # una sola vez
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+./scripts/seed.sh                                                     # datos con las fechas de hoy
+# http://localhost:8080 → admin / admin123
 ```
+
+`docker compose up -d --build` (sin overlay) levanta las imágenes de producción locales, también en
+8080; `docker-compose.prod.yml` publica solo el puerto 80.
 
 ## Arquitectura del backend
 
@@ -169,6 +182,8 @@ Reglas:
 ## Documentación
 
 - `README.md` — operación, scripts y despliegue.
+- `docs-tecnicos/puesta-en-marcha-demo.md` — **guía única** para levantar los dos repos, sembrar la
+  demo y ver lo mismo que en la presentación (incluye credenciales, scripts y problemas comunes).
 - `frontend/README.md` — desarrollo del frontend (puede estar desactualizado en versiones; manda
   `frontend/package.json`).
 - `docs/modelo-datos.md` — modelo de datos.

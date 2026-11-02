@@ -108,25 +108,36 @@ compartir el enlace conserva la vista.
 
 ```bash
 cd domain
-mvn -B verify          # todas las pruebas (166 tests)
-mvn -B test            # solo pruebas unitarias/integración
+set -a; source .env; set +a   # JWT_SECRET_BASE64 es obligatorio
+mvn -B verify                 # compila y corre todas las pruebas
+mvn -B test                   # solo pruebas unitarias/integración
 ```
 
 ## Sistema completo (con AuthCore y Frontend)
 
-Requiere tener `authcore/` clonado junto a `domain/`:
+Requiere tener `authcore/` clonado junto a `domain/` (hermanos). La guía paso a paso, con datos de
+demo, credenciales y problemas comunes, es **`docs-tecnicos/puesta-en-marcha-demo.md`**.
 
 ```bash
 cd domain
-docker compose up -d --build
+./scripts/generar-env.sh          # crea .env (JWT, bases y ADMIN_PASSWORD)
+./scripts/verificar-secreto.sh
+docker compose -f docker-compose.yml -f docker-compose.dev.yml build   # una sola vez
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+./scripts/seed.sh                 # 20 por entidad con las fechas de hoy
+# http://localhost:8080 → admin / admin123
 ```
+
+Para el despliegue local con imágenes de producción: `docker compose up -d --build` (frontend en
+8080). Para un servidor: `docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build`
+(publica solo el puerto 80).
 
 Servicios:
 - `authcore-db` (MySQL 8.4)
 - `authcore` (Spring Boot 4.1.1) - puerto 8081
 - `domain-db` (PostgreSQL 16)
 - `domain` (Spring Boot 3.5.6) - puerto 8085
-- `frontend` (nginx) - puerto 8080
+- `frontend` (Vite o nginx) - puerto 8080
 
 ## Scripts de apoyo (en `scripts/`)
 
