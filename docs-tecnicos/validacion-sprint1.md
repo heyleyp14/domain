@@ -68,6 +68,10 @@ Para cerrar el riesgo se proponen dos caminos:
 
 Como esta tarea prohíbe modificar el código fuente, el riesgo queda documentado y no corregido. La recomendación es implementar el reintento acotado en el próximo cambio y evaluar el upsert atómico si el negocio exige tolerancia estricta en el primer día del año.
 
+## Decisión del grupo
+
+El reintento automático ante la colisión del primer número de factura del año **se deja como mejora futura** (decisión del grupo, 06/11/2026). Queda registrado como limitación conocida; el acta admite esta opción. Si se retoma, el siguiente paso es una prueba que reproduzca el caso (dos ventas de productos distintos, sin fila del año) y luego el reintento acotado.
+
 ## Key Learnings
 
 1. La suite completa queda en 202 pruebas, 0 fallas, 0 errores y 0 omitidas; `FerreteriaRestTest` (9) y `ConcurrenciaVentasTest` (2) pasan también de forma aislada.

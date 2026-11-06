@@ -27,7 +27,7 @@ Documento base para crear las tarjetas en Trello. Se deriva de `docs/Acta_Planea
 | `FerreteriaRestTest` | Hecho | verde |
 | `ConcurrenciaVentasTest` | Hecho | verde |
 | Ejercicio propio del grupo · Unidad de medida | Por validar | verde |
-| Riesgo · Primer número de factura del año | Por hacer | rojo |
+| Riesgo · Primer número de factura del año | Por validar | verde |
 
 ---
 
@@ -243,13 +243,14 @@ Documento base para crear las tarjetas en Trello. Se deriva de `docs/Acta_Planea
 
 **Checklist**
 - [x] Ejecutar `ConcurrenciaVentasTest` y documentar que no cubre este caso.
-- [ ] Decidir: reintento acotado este semestre (2-3 h) o mejora futura.
-- [ ] Registrar la decisión en el acta.
-- [ ] Si se implementa: prueba que reproduzca el caso (productos distintos, sin fila del año) y luego el reintento.
+- [x] Decidir: se deja como mejora futura (06/11/2026).
+- [x] Decisión registrada en `validacion-sprint1.md`.
+- [ ] Registrar la decisión en el acta del grupo.
+- [ ] (Futuro) Prueba que reproduzca el caso (productos distintos, sin fila del año) y luego el reintento acotado.
 
-**Columna sugerida:** Por hacer
+**Columna sugerida:** Por validar (falta copiar la decisión al acta)
 
-**Etiqueta:** rojo
+**Etiqueta:** verde
 
 **Responsable:** [completar]
 
@@ -262,6 +263,6 @@ Documento base para crear las tarjetas en Trello. Se deriva de `docs/Acta_Planea
 - Estado verificado el 06/11/2026: `mvn verify` con 220 pruebas, 0 fallas, 0 errores y 0 omitidas (reportes de `target/surefire-reports`).
 - HU-8 a HU-12, `FerreteriaRestTest` y `ConcurrenciaVentasTest` pasan a Hecho; las suites que la guía marcaba como "por correr" ya están en verde.
 - El ejercicio propio (unidad de medida en Producto) está implementado y probado; queda por validar en cada máquina y actualizar `matriz-pruebas.md`.
-- El riesgo del primer número de factura del año sigue abierto: `ConcurrenciaVentasTest` no lo cubre (usa el mismo producto). Falta decidir entre reintento acotado o mejora futura.
+- El riesgo del primer número de factura del año es una limitación conocida: `ConcurrenciaVentasTest` no lo cubre (usa el mismo producto). Decisión: se deja como mejora futura.
 - No se registran responsables, fechas ni enlaces: se dejan como `[completar]` para que el equipo los complete con datos reales.
 - La validación manual por integrante (token ADMIN, al menos tres operaciones USER y descarga de PDF) no está evidenciada aquí; queda pendiente aunque la automatización esté en verde.
