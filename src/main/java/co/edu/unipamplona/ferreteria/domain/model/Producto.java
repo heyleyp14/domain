@@ -29,11 +29,12 @@ public class Producto {
     private boolean aplicaIva;
     private int stock;
     private long proveedorId;
+    private UnidadMedida unidadMedida;
     private boolean activo;
     private Auditoria auditoria;
 
     private Producto(Long id, String codigo, String nombre, Dinero precioBase, boolean aplicaIva, int stock, long proveedorId,
-                     boolean activo, Auditoria auditoria) {
+                     UnidadMedida unidadMedida, boolean activo, Auditoria auditoria) {
         this.id = id;
         this.codigo = codigo;
         this.nombre = nombre;
@@ -41,19 +42,31 @@ public class Producto {
         this.aplicaIva = aplicaIva;
         this.stock = stock;
         this.proveedorId = proveedorId;
+        this.unidadMedida = unidadMedida == null ? UnidadMedida.UNIDAD : unidadMedida;
         this.activo = activo;
         this.auditoria = auditoria;
     }
 
     public static Producto registrar(String codigo, String nombre, BigDecimal precioBase, Boolean aplicaIva, Integer stockInicial,
                                      Long proveedorId, String usuario, Instant ahora) {
+        return registrar(codigo, nombre, precioBase, aplicaIva, stockInicial, proveedorId, null, usuario, ahora);
+    }
+
+    public static Producto registrar(String codigo, String nombre, BigDecimal precioBase, Boolean aplicaIva, Integer stockInicial,
+                                     Long proveedorId, String unidadMedida, String usuario, Instant ahora) {
         return new Producto(null, normalizarCodigo(codigo), nombre(nombre), precio(precioBase), aplicaIva(aplicaIva),
-                stockInicial(stockInicial), proveedor(proveedorId), true, Auditoria.creada(usuario, ahora));
+                stockInicial(stockInicial), proveedor(proveedorId), UnidadMedida.deRegistro(unidadMedida), true,
+                Auditoria.creada(usuario, ahora));
     }
 
     public static Producto reconstruir(Long id, String codigo, String nombre, Dinero precioBase, boolean aplicaIva, int stock,
                                        long proveedorId, boolean activo, Auditoria auditoria) {
-        return new Producto(id, codigo, nombre, precioBase, aplicaIva, stock, proveedorId, activo, auditoria);
+        return reconstruir(id, codigo, nombre, precioBase, aplicaIva, stock, proveedorId, UnidadMedida.UNIDAD, activo, auditoria);
+    }
+
+    public static Producto reconstruir(Long id, String codigo, String nombre, Dinero precioBase, boolean aplicaIva, int stock,
+                                       long proveedorId, UnidadMedida unidadMedida, boolean activo, Auditoria auditoria) {
+        return new Producto(id, codigo, nombre, precioBase, aplicaIva, stock, proveedorId, unidadMedida, activo, auditoria);
     }
 
     public static String normalizarCodigo(String c) {
@@ -94,14 +107,23 @@ public class Producto {
 
     /** Edita los datos comerciales. El código y el stock no cambian por aquí. */
     public void editar(String nombre, BigDecimal precioBase, Boolean aplicaIva, Long proveedorId, String usuario, Instant ahora) {
+        editar(nombre, precioBase, aplicaIva, proveedorId, null, usuario, ahora);
+    }
+
+    public void editar(String nombre, BigDecimal precioBase, Boolean aplicaIva, Long proveedorId, String unidadMedida,
+                       String usuario, Instant ahora) {
         String n = nombre(nombre);
         Dinero p = precio(precioBase);
         boolean i = aplicaIva(aplicaIva);
         long prov = proveedor(proveedorId);
+        UnidadMedida u = unidadMedida == null || unidadMedida.isBlank()
+                ? this.unidadMedida
+                : UnidadMedida.desde(unidadMedida);
         this.nombre = n;
         this.precioBase = p;
         this.aplicaIva = i;
         this.proveedorId = prov;
+        this.unidadMedida = u;
         this.auditoria = auditoria.modificada(usuario, ahora);
     }
 
@@ -161,6 +183,7 @@ public class Producto {
     public boolean isAplicaIva() { return aplicaIva; }
     public int getStock() { return stock; }
     public long getProveedorId() { return proveedorId; }
+    public UnidadMedida getUnidadMedida() { return unidadMedida; }
     public boolean isActivo() { return activo; }
     public Auditoria getAuditoria() { return auditoria; }
 }

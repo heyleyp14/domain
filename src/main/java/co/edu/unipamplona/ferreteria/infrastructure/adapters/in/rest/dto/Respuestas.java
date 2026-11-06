@@ -17,6 +17,7 @@ import co.edu.unipamplona.ferreteria.domain.model.Proveedor;
 import co.edu.unipamplona.ferreteria.domain.model.ReporteDiario;
 import co.edu.unipamplona.ferreteria.domain.model.ResumenFactura;
 import co.edu.unipamplona.ferreteria.domain.model.TendenciaVentas;
+import co.edu.unipamplona.ferreteria.domain.model.UnidadMedida;
 import co.edu.unipamplona.ferreteria.domain.model.VentaDiaria;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -41,10 +42,10 @@ public final class Respuestas {
     }
 
     public record ProductoResumenR(String codigo, String nombre, BigDecimal precioBase, boolean aplicaIva, BigDecimal precioFinal,
-                                   int stock, boolean stockBajo, boolean activo) {
+                                   int stock, boolean stockBajo, boolean activo, UnidadMedida unidadMedida) {
         static ProductoResumenR de(Producto p) {
             return new ProductoResumenR(p.getCodigo(), p.getNombre(), p.getPrecioBase().valor(), p.isAplicaIva(),
-                    p.precioFinal().valor(), p.getStock(), p.stockBajo(), p.isActivo());
+                    p.precioFinal().valor(), p.getStock(), p.stockBajo(), p.isActivo(), p.getUnidadMedida());
         }
     }
 
@@ -58,12 +59,13 @@ public final class Respuestas {
     }
 
     public record ProductoR(Long id, String codigo, String nombre, BigDecimal precioBase, boolean aplicaIva, BigDecimal precioFinal,
-                            int stock, boolean stockBajo, boolean activo, Long proveedorId, String proveedorNombre, AuditoriaR auditoria) {
+                            int stock, boolean stockBajo, boolean activo, Long proveedorId, String proveedorNombre,
+                            UnidadMedida unidadMedida, AuditoriaR auditoria) {
         public static ProductoR de(ProductoDetalle d) {
             Producto p = d.producto();
             return new ProductoR(p.getId(), p.getCodigo(), p.getNombre(), p.getPrecioBase().valor(), p.isAplicaIva(),
                     p.precioFinal().valor(), p.getStock(), p.stockBajo(), p.isActivo(), d.proveedor().getId(),
-                    d.proveedor().getNombre(), AuditoriaR.de(p.getAuditoria()));
+                    d.proveedor().getNombre(), p.getUnidadMedida(), AuditoriaR.de(p.getAuditoria()));
         }
     }
 

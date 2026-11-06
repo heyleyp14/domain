@@ -44,7 +44,7 @@ public final class Datos {
     public static Producto productoConId(long id, String codigo, String precio, boolean iva, int stock, long proveedorId) {
         Producto p = producto(codigo, precio, iva, stock, proveedorId);
         return Producto.reconstruir(id, p.getCodigo(), p.getNombre(), p.getPrecioBase(), p.isAplicaIva(), p.getStock(),
-                p.getProveedorId(), p.isActivo(), p.getAuditoria());
+                p.getProveedorId(), p.getUnidadMedida(), p.isActivo(), p.getAuditoria());
     }
 
     public static Factura factura(String numero, Instant fecha, String cliente, boolean anulada, LineaFactura... lineas) {

@@ -37,13 +37,15 @@ public class ProductoController {
     @ResponseStatus(HttpStatus.CREATED)
     public ProductoR registrar(@RequestBody Peticiones.ProductoNuevo p) {
         return ProductoR.de(catalogo.registrarProducto(ActorActual.obtener(),
-                new RegistrarProductoCommand(p.codigo(), p.nombre(), p.precioBase(), p.aplicaIva(), p.stockInicial(), p.proveedorId())));
+                new RegistrarProductoCommand(p.codigo(), p.nombre(), p.precioBase(), p.aplicaIva(), p.stockInicial(),
+                        p.proveedorId(), p.unidadMedida())));
     }
 
     @PutMapping("/{codigo}")
     public ProductoR editar(@PathVariable String codigo, @RequestBody Peticiones.ProductoEdicion p) {
         return ProductoR.de(catalogo.editarProducto(ActorActual.obtener(),
-                new EditarProductoCommand(codigo, p.nombre(), p.precioBase(), p.aplicaIva(), p.proveedorId())));
+                new EditarProductoCommand(codigo, p.nombre(), p.precioBase(), p.aplicaIva(), p.proveedorId(),
+                        p.unidadMedida())));
     }
 
     @PostMapping("/{codigo}/desactivar")

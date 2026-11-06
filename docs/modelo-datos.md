@@ -46,6 +46,7 @@ erDiagram
         boolean aplica_iva
         integer stock
         bigint proveedor_id FK
+        varchar(20) unidad_medida
         boolean activo
         varchar(100) creado_por
         timestamptz creado_en
@@ -121,6 +122,10 @@ erDiagram
   disponibilidad viven en el dominio, no en la base.
 - `proveedor_id` referencia `proveedores.id` (FK lógica: el dominio guarda el
   `long` y el adaptador resuelve el nombre al leer).
+- `unidad_medida` es obligatoria y toma `UNIDAD` por defecto. Se admiten los
+  valores `UNIDAD`, `CAJA`, `PAQUETE`, `KILOGRAMO`, `GRAMO`, `LITRO`,
+  `MILILITRO`, `METRO`, `METRO_CUADRADO` y `PAR`. Las filas existentes antes de
+  la columna quedan en `UNIDAD`.
 - `version` es la columna de bloqueo optimista de JPA (`@Version`). El
   adaptador **no** llama a `save` sobre una entidad ya cargada: muta la
   instancia administrada y deja que el *dirty checking* actualice solo las

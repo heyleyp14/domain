@@ -91,6 +91,76 @@ class CatalogoServiceTest {
     }
 
     @Test
+    @DisplayName("Registrar un producto sin unidad de medida usa UNIDAD por defecto")
+    void registraProductoConUnidadPorDefecto() {
+        Proveedor prov = e.proveedor("Aceros del Norte");
+        ProductoDetalle d = e.catalogo.registrarProducto(e.admin(), nuevo("MAR-01", prov.getId()));
+        assertEquals(UnidadMedida.UNIDAD, d.producto().getUnidadMedida());
+    }
+
+    @Test
+    @DisplayName("Registrar un producto con unidad de medida explícita la valida y normaliza")
+    void registraProductoConUnidadExplicita() {
+        Proveedor prov = e.proveedor("Aceros del Norte");
+        ProductoDetalle d = e.catalogo.registrarProducto(e.admin(), new RegistrarProductoCommand(
+                "MAR-01", "Martillo de uña", new BigDecimal("25000"), true, 12, prov.getId(), " caja "));
+        assertEquals(UnidadMedida.CAJA, d.producto().getUnidadMedida());
+    }
+
+    @Test
+    @DisplayName("Una unidad de medida fuera del catálogo se rechaza con 400 y no guarda el producto")
+    void rechazaUnidadInvalida() {
+        Proveedor prov = e.proveedor("Aceros del Norte");
+        assertThrows(ValorInvalidoException.class, () -> e.catalogo.registrarProducto(e.admin(), new RegistrarProductoCommand(
+                "MAR-01", "Martillo de uña", new BigDecimal("25000"), true, 12, prov.getId(), "DOCENA")));
+        assertTrue(e.productos.buscarPorCodigo("MAR-01").isEmpty());
+    }
+
+    @Test
+    @DisplayName("Editar un producto cambia su unidad de medida")
+    void editaUnidadMedida() {
+        Proveedor prov = e.proveedor("Aceros del Norte");
+        e.catalogo.registrarProducto(e.admin(), new RegistrarProductoCommand(
+                "MAR-01", "Martillo de uña", new BigDecimal("25000"), true, 12, prov.getId(), "CAJA"));
+        ProductoDetalle d = e.catalogo.editarProducto(e.admin(), new EditarProductoCommand(
+                "mar-01", "Martillo de uña", new BigDecimal("25000"), true, prov.getId(), "KILOGRAMO"));
+        assertEquals(UnidadMedida.KILOGRAMO, d.producto().getUnidadMedida());
+    }
+
+    @Test
+    @DisplayName("Editar un producto sin unidad de medida conserva la que tenía")
+    void editaSinUnidadConservaLaActual() {
+        Proveedor prov = e.proveedor("Aceros del Norte");
+        e.catalogo.registrarProducto(e.admin(), new RegistrarProductoCommand(
+                "MAR-01", "Martillo de uña", new BigDecimal("25000"), true, 12, prov.getId(), "CAJA"));
+        ProductoDetalle d = e.catalogo.editarProducto(e.admin(), new EditarProductoCommand(
+                "mar-01", "Martillo de uña", new BigDecimal("27000"), true, prov.getId()));
+        assertEquals(UnidadMedida.CAJA, d.producto().getUnidadMedida());
+    }
+
+    @Test
+    @DisplayName("Crear y editar con el contrato anterior conserva el comportamiento previo")
+    void comportamientoPrevioDeProductosSigueIgual() {
+        Proveedor prov = e.proveedor("Aceros del Norte");
+        ProductoDetalle creado = e.catalogo.registrarProducto(e.admin(), nuevo("mar-01", prov.getId()));
+        assertEquals("MAR-01", creado.producto().getCodigo());
+        assertEquals(12, creado.producto().getStock());
+        assertEquals(Dinero.de("29750.00"), creado.producto().precioFinal());
+        assertEquals(UnidadMedida.UNIDAD, creado.producto().getUnidadMedida());
+        assertEquals("admin@murano3d.co", creado.producto().getAuditoria().creadoPor());
+
+        e.avanzar(java.time.Duration.ofHours(1));
+        ProductoDetalle editado = e.catalogo.editarProducto(e.admin(), new EditarProductoCommand(
+                "mar-01", "Martillo de uña", new BigDecimal("27000"), false, prov.getId()));
+        assertEquals("Martillo de uña", editado.producto().getNombre());
+        assertEquals(Dinero.de("27000.00"), editado.producto().precioFinal());
+        assertEquals(12, editado.producto().getStock());
+        assertEquals("MAR-01", editado.producto().getCodigo());
+        assertEquals(UnidadMedida.UNIDAD, editado.producto().getUnidadMedida());
+        assertEquals("admin@murano3d.co", editado.producto().getAuditoria().modificadoPor());
+    }
+
+    @Test
     @DisplayName("No permite repetir el código de un producto, aunque cambie la escritura")
     void codigoUnico() {
         Proveedor prov = e.proveedor("Aceros del Norte");

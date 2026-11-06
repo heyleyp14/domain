@@ -23,7 +23,7 @@ POST {{base}}/api/productos
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{ "codigo": "MAR-01", "nombre": "Martillo de uña 16 oz", "precioBase": 25000, "aplicaIva": true, "stockInicial": 12, "proveedorId": 1 }
+{ "codigo": "MAR-01", "nombre": "Martillo de uña 16 oz", "precioBase": 25000, "aplicaIva": true, "stockInicial": 12, "proveedorId": 1, "unidadMedida": "UNIDAD" }
 
 ### HU-8 Buscar productos (texto, solo activos, solo stock bajo)
 GET {{base}}/api/productos?q=martillo&soloActivos=true&bajoStock=false
@@ -34,7 +34,7 @@ PUT {{base}}/api/productos/MAR-01
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{ "nombre": "Martillo de uña 16 oz reforzado", "precioBase": 27000, "aplicaIva": true, "proveedorId": 1 }
+{ "nombre": "Martillo de uña 16 oz reforzado", "precioBase": 27000, "aplicaIva": true, "proveedorId": 1, "unidadMedida": "UNIDAD" }
 
 ### HU-8 Desactivar / activar (ADMIN)
 POST {{base}}/api/productos/MAR-01/desactivar

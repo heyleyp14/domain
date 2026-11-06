@@ -102,7 +102,7 @@ public class CatalogoService implements CatalogoUseCase {
                 "stock inicial", c.stockInicial(), "proveedor", c.proveedorId());
         return transaccion.ejecutar(() -> {
             Producto p = Producto.registrar(c.codigo(), c.nombre(), c.precioBase(), c.aplicaIva(), c.stockInicial(), c.proveedorId(),
-                    actor.username(), reloj.instant());
+                    c.unidadMedida(), actor.username(), reloj.instant());
             Proveedor prov = proveedorExistente(p.getProveedorId());
             if (productos.buscarPorCodigo(p.getCodigo()).isPresent()) throw new CodigoProductoDuplicadoException(p.getCodigo());
             return new ProductoDetalle(productos.guardar(p), prov);
@@ -116,7 +116,8 @@ public class CatalogoService implements CatalogoUseCase {
                 "proveedor", c.proveedorId());
         return transaccion.ejecutar(() -> {
             Producto p = productoExistente(c.codigo());
-            p.editar(c.nombre(), c.precioBase(), c.aplicaIva(), c.proveedorId(), actor.username(), reloj.instant());
+            p.editar(c.nombre(), c.precioBase(), c.aplicaIva(), c.proveedorId(), c.unidadMedida(), actor.username(),
+                    reloj.instant());
             Proveedor prov = proveedorExistente(p.getProveedorId());
             return new ProductoDetalle(productos.guardar(p), prov);
         });

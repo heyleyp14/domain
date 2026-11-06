@@ -681,6 +681,10 @@ components:
         telefono: { type: string, nullable: true }
         correo: { type: string, format: email, nullable: true }
         direccion: { type: string, nullable: true }
+    UnidadMedida:
+      type: string
+      enum: [UNIDAD, CAJA, PAQUETE, KILOGRAMO, GRAMO, LITRO, MILILITRO, METRO, METRO_CUADRADO, PAR]
+      description: Unidad de medida del producto. En la creación vale UNIDAD si se omite.
     ProductoNuevo:
       type: object
       properties:
@@ -690,6 +694,7 @@ components:
         aplicaIva: { type: boolean }
         stockInicial: { type: integer, minimum: 0, maximum: 1000000 }
         proveedorId: { type: integer, format: int64 }
+        unidadMedida: { $ref: '#/components/schemas/UnidadMedida' }
     ProductoEdicion:
       type: object
       properties:
@@ -697,6 +702,7 @@ components:
         precioBase: { $ref: '#/components/schemas/Dinero' }
         aplicaIva: { type: boolean }
         proveedorId: { type: integer, format: int64 }
+        unidadMedida: { $ref: '#/components/schemas/UnidadMedida' }
     ItemVenta:
       type: object
       properties:
@@ -759,6 +765,7 @@ components:
         stock: { type: integer }
         stockBajo: { type: boolean, description: Verdadero con 5 unidades o menos. }
         activo: { type: boolean }
+        unidadMedida: { $ref: '#/components/schemas/UnidadMedida' }
     ProveedorDetalleR:
       type: object
       properties:
@@ -784,6 +791,7 @@ components:
         activo: { type: boolean }
         proveedorId: { type: integer, format: int64 }
         proveedorNombre: { type: string }
+        unidadMedida: { $ref: '#/components/schemas/UnidadMedida' }
         auditoria: { $ref: '#/components/schemas/AuditoriaR' }
     BusquedaProductosR:
       type: object

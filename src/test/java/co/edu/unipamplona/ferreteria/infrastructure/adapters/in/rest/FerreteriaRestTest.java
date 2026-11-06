@@ -103,6 +103,48 @@ public class FerreteriaRestTest {
     }
 
     @Test
+    @DisplayName("Crear un producto sin unidad de medida usa UNIDAD por defecto")
+    void crearProductoSinUnidadUsaUnidadPorDefecto() throws Exception {
+        long prov = crearProveedor("Proveedor unidad " + System.nanoTime());
+        mvc.perform(con(post("/api/productos"), admin(), "{\"codigo\":\"UNI-01\",\"nombre\":\"Producto UNI-01\","
+                        + "\"precioBase\":1000,\"aplicaIva\":true,\"stockInicial\":1,\"proveedorId\":" + prov + "}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.unidadMedida").value("UNIDAD"));
+        mvc.perform(con(get("/api/productos/UNI-01"), admin(), null))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.unidadMedida").value("UNIDAD"));
+    }
+
+    @Test
+    @DisplayName("Crear un producto con una unidad de medida fuera del catálogo devuelve 400")
+    void crearProductoConUnidadInvalidaDevuelve400() throws Exception {
+        long prov = crearProveedor("Proveedor unidad inválida " + System.nanoTime());
+        mvc.perform(con(post("/api/productos"), admin(), "{\"codigo\":\"UNI-02\",\"nombre\":\"Producto UNI-02\","
+                        + "\"precioBase\":1000,\"aplicaIva\":true,\"stockInicial\":1,\"proveedorId\":" + prov
+                        + ",\"unidadMedida\":\"DOCENA\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.mensaje").value(org.hamcrest.Matchers.containsString("unidad de medida")));
+        mvc.perform(con(get("/api/productos/UNI-02"), admin(), null)).andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Editar cambia la unidad de medida y la conserva cuando se omite")
+    void editarProductoCambiaUnidadYLaConservaSiSeOmite() throws Exception {
+        long prov = crearProveedor("Proveedor edición unidad " + System.nanoTime());
+        crearProducto("UNI-03", "1000", true, 5, prov);
+
+        mvc.perform(con(put("/api/productos/UNI-03"), admin(), "{\"nombre\":\"Producto UNI-03\",\"precioBase\":1000,"
+                        + "\"aplicaIva\":true,\"proveedorId\":" + prov + ",\"unidadMedida\":\"CAJA\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.unidadMedida").value("CAJA"));
+
+        mvc.perform(con(put("/api/productos/UNI-03"), admin(), "{\"nombre\":\"Producto UNI-03\",\"precioBase\":1000,"
+                        + "\"aplicaIva\":true,\"proveedorId\":" + prov + "}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.unidadMedida").value("CAJA"));
+    }
+
+    @Test
     @DisplayName("Flujo completo: proveedor, producto, venta, stock, anulación, compra, comparación y reporte")
     void flujoCompleto() throws Exception {
         long prov = crearProveedor("Distribuidora Rest " + System.nanoTime());
@@ -112,7 +154,8 @@ public class FerreteriaRestTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.precioFinal").value(29750.0))
                 .andExpect(jsonPath("$.stock").value(10))
-                .andExpect(jsonPath("$.stockBajo").value(false));
+                .andExpect(jsonPath("$.stockBajo").value(false))
+                .andExpect(jsonPath("$.unidadMedida").value("UNIDAD"));
 
         // Código repetido: 409
         mvc.perform(con(post("/api/productos"), admin(), "{\"codigo\":\"mar-900\",\"nombre\":\"Repetido\",\"precioBase\":1,"

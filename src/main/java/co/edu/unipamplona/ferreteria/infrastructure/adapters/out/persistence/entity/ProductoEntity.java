@@ -1,7 +1,10 @@
 package co.edu.unipamplona.ferreteria.infrastructure.adapters.out.persistence.entity;
 
+import co.edu.unipamplona.ferreteria.domain.model.UnidadMedida;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -10,6 +13,7 @@ import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
 import java.math.BigDecimal;
 import java.time.Instant;
+import org.hibernate.annotations.ColumnDefault;
 
 @Entity
 @Table(name = "productos", uniqueConstraints = @UniqueConstraint(name = "uk_producto_codigo", columnNames = "codigo"))
@@ -36,6 +40,11 @@ public class ProductoEntity {
 
     @Column(nullable = false)
     private long proveedorId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "unidad_medida", nullable = false, length = 20)
+    @ColumnDefault("'UNIDAD'")
+    private UnidadMedida unidadMedida;
 
     @Column(nullable = false)
     private boolean activo;
@@ -71,6 +80,8 @@ public class ProductoEntity {
     public void setStock(int stock) { this.stock = stock; }
     public long getProveedorId() { return proveedorId; }
     public void setProveedorId(long proveedorId) { this.proveedorId = proveedorId; }
+    public UnidadMedida getUnidadMedida() { return unidadMedida; }
+    public void setUnidadMedida(UnidadMedida unidadMedida) { this.unidadMedida = unidadMedida; }
     public boolean isActivo() { return activo; }
     public void setActivo(boolean activo) { this.activo = activo; }
     public String getCreadoPor() { return creadoPor; }

@@ -70,6 +70,6 @@ public class ProductoRepositoryEnMemoria implements ProductoRepositoryPort {
 
     private Producto copia(long id, Producto p) {
         return Producto.reconstruir(id, p.getCodigo(), p.getNombre(), p.getPrecioBase(), p.isAplicaIva(), p.getStock(),
-                p.getProveedorId(), p.isActivo(), p.getAuditoria());
+                p.getProveedorId(), p.getUnidadMedida(), p.isActivo(), p.getAuditoria());
     }
 }

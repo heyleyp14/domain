@@ -11,9 +11,10 @@ public final class Peticiones {
     public record Proveedor(String nombre, String telefono, String correo, String direccion) { }
 
     public record ProductoNuevo(String codigo, String nombre, BigDecimal precioBase, Boolean aplicaIva, Integer stockInicial,
-                                Long proveedorId) { }
+                                Long proveedorId, String unidadMedida) { }
 
-    public record ProductoEdicion(String nombre, BigDecimal precioBase, Boolean aplicaIva, Long proveedorId) { }
+    public record ProductoEdicion(String nombre, BigDecimal precioBase, Boolean aplicaIva, Long proveedorId,
+                                  String unidadMedida) { }
 
     public record ItemVenta(String codigo, Integer cantidad) { }
 

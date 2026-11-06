@@ -86,6 +86,9 @@ facturas con **las fechas del día en que se ejecuta** (hora de Bogotá). No hay
 seed se ejecuta a mano cuando se quiere una demo completa, y cada ejecución deja los datos "de hoy".
 
 - 6 productos quedan en stock bajo (0, 0, 1, 2, 3 y 5) para llenar "Stock bajo".
+- Cada producto usa `unidadMedida`; si se omite al crearlo vale `UNIDAD`. Al editar, omitirla conserva
+  la unidad actual. Valores permitidos: `UNIDAD`, `CAJA`, `PAQUETE`, `KILOGRAMO`, `GRAMO`, `LITRO`,
+  `MILILITRO`, `METRO`, `METRO_CUADRADO` y `PAR`.
 - 7 facturas son de hoy (una anulada) y llenan "Ventas de hoy", "Más vendidos hoy" y el reporte diario.
 - Las otras 13 se reparten entre hace 1 y 25 días, así la gráfica y "Facturas" tienen historia.
 - Las compras van de hace 40 a hace 21 días, para que "Comparar precios" muestre el precio vigente.

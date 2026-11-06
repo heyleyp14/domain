@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import co.edu.unipamplona.ferreteria.domain.exception.*;
 import co.edu.unipamplona.ferreteria.domain.model.Dinero;
 import co.edu.unipamplona.ferreteria.domain.model.Producto;
+import co.edu.unipamplona.ferreteria.domain.model.UnidadMedida;
 import co.edu.unipamplona.ferreteria.testsupport.Datos;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -24,6 +25,62 @@ class ProductoTest {
         assertEquals(10, p.getStock());
         assertEquals("admin", p.getAuditoria().creadoPor());
         assertEquals(Datos.AHORA, p.getAuditoria().creadoEn());
+    }
+
+    @Test
+    @DisplayName("Unidad de medida: si no se indica, el producto usa UNIDAD")
+    void unidadMedidaPorDefectoEsUnidad() {
+        assertEquals(UnidadMedida.UNIDAD, martillo().getUnidadMedida());
+        Producto explicito = Producto.registrar("A1", "Clavo", new BigDecimal("5"), true, 1, 1L, null, "a", Datos.AHORA);
+        assertEquals(UnidadMedida.UNIDAD, explicito.getUnidadMedida());
+    }
+
+    @Test
+    @DisplayName("Unidad de medida: normaliza espacios y mayúsculas y acepta el catálogo")
+    void normalizaUnidadMedidaValida() {
+        Producto caja = Producto.registrar("A1", "Clavo", new BigDecimal("5"), true, 1, 1L, " caja ", "a", Datos.AHORA);
+        assertEquals(UnidadMedida.CAJA, caja.getUnidadMedida());
+        Producto kilo = Producto.registrar("A2", "Tornillo", new BigDecimal("5"), true, 1, 1L, "kilogramo", "a", Datos.AHORA);
+        assertEquals(UnidadMedida.KILOGRAMO, kilo.getUnidadMedida());
+    }
+
+    @Test
+    @DisplayName("Unidad de medida: rechaza valores fuera del catálogo")
+    void rechazaUnidadMedidaFueraDelCatalogo() {
+        assertThrows(ValorInvalidoException.class,
+                () -> Producto.registrar("A1", "Clavo", new BigDecimal("5"), true, 1, 1L, "DOCENA", "a", Datos.AHORA));
+        assertThrows(ValorInvalidoException.class,
+                () -> Producto.registrar("A1", "Clavo", new BigDecimal("5"), true, 1, 1L, "METRO CUADRADO", "a", Datos.AHORA));
+    }
+
+    @Test
+    @DisplayName("Editar cambia la unidad de medida")
+    void editarCambiaUnidadMedida() {
+        Producto p = martillo();
+        p.editar("Martillo de uña", new BigDecimal("27000"), false, 2L, "CAJA", "admin2", Datos.AHORA.plusSeconds(3600));
+        assertEquals(UnidadMedida.CAJA, p.getUnidadMedida());
+    }
+
+    @Test
+    @DisplayName("Editar sin unidad de medida conserva la que tenía")
+    void editarSinUnidadConservaLaActual() {
+        Producto p = Producto.registrar("A1", "Clavo", new BigDecimal("5"), true, 1, 1L, "CAJA", "admin", Datos.AHORA);
+        p.editar("Clavo reforzado", new BigDecimal("6"), true, 1L, "admin", Datos.AHORA.plusSeconds(60));
+        assertEquals(UnidadMedida.CAJA, p.getUnidadMedida());
+    }
+
+    @Test
+    @DisplayName("Una unidad de medida inválida no deja la edición a medias")
+    void editarConUnidadInvalidaNoCambiaNada() {
+        Producto p = Producto.registrar("A1", "Clavo", new BigDecimal("5"), true, 1, 1L, "CAJA", "admin", Datos.AHORA);
+        assertThrows(ValorInvalidoException.class,
+                () -> p.editar("Otro", new BigDecimal("9"), false, 2L, "DOCENA", "admin2", Datos.AHORA));
+        assertEquals("Clavo", p.getNombre());
+        assertEquals(Dinero.de("5.00"), p.getPrecioBase());
+        assertTrue(p.isAplicaIva());
+        assertEquals(1L, p.getProveedorId());
+        assertEquals(UnidadMedida.CAJA, p.getUnidadMedida());
+        assertEquals("admin", p.getAuditoria().modificadoPor());
     }
 
     @Test

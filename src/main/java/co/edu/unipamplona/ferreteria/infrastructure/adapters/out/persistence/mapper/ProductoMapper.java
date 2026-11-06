@@ -24,6 +24,7 @@ public class ProductoMapper {
         e.setAplicaIva(p.isAplicaIva());
         e.setStock(p.getStock());
         e.setProveedorId(p.getProveedorId());
+        e.setUnidadMedida(p.getUnidadMedida());
         e.setActivo(p.isActivo());
         e.setCreadoPor(p.getAuditoria().creadoPor());
         e.setCreadoEn(p.getAuditoria().creadoEn());
@@ -33,7 +34,7 @@ public class ProductoMapper {
 
     public Producto aDominio(ProductoEntity e) {
         return Producto.reconstruir(e.getId(), e.getCodigo(), e.getNombre(), Dinero.de(e.getPrecioBase()), e.isAplicaIva(),
-                e.getStock(), e.getProveedorId(), e.isActivo(),
+                e.getStock(), e.getProveedorId(), e.getUnidadMedida(), e.isActivo(),
                 new Auditoria(e.getCreadoPor(), e.getCreadoEn(), e.getModificadoPor(), e.getModificadoEn()));
     }
 }

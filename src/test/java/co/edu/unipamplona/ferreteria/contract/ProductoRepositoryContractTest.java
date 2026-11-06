@@ -8,6 +8,7 @@ import co.edu.unipamplona.ferreteria.application.port.out.Paginacion;
 import co.edu.unipamplona.ferreteria.application.port.out.ProductoRepositoryPort;
 import co.edu.unipamplona.ferreteria.domain.model.Dinero;
 import co.edu.unipamplona.ferreteria.domain.model.Producto;
+import co.edu.unipamplona.ferreteria.domain.model.UnidadMedida;
 import co.edu.unipamplona.ferreteria.testsupport.Datos;
 import java.math.BigDecimal;
 import java.util.List;
@@ -30,6 +31,7 @@ public abstract class ProductoRepositoryContractTest {
         assertTrue(r.isAplicaIva());
         assertEquals(12, r.getStock());
         assertEquals(7L, r.getProveedorId());
+        assertEquals(UnidadMedida.UNIDAD, r.getUnidadMedida());
         assertTrue(r.isActivo());
         assertEquals("admin", r.getAuditoria().creadoPor());
         assertEquals(Datos.AHORA, r.getAuditoria().creadoEn());
@@ -37,10 +39,17 @@ public abstract class ProductoRepositoryContractTest {
     }
 
     @Test
+    void guardaYRecuperaUnidadMedidaExplicita() {
+        repo().guardar(Producto.registrar("MAR-01", "Martillo de uña", new BigDecimal("25000"), true, 12, 7L,
+                "CAJA", "admin", Datos.AHORA));
+        assertEquals(UnidadMedida.CAJA, repo().buscarPorCodigo("MAR-01").orElseThrow().getUnidadMedida());
+    }
+
+    @Test
     void actualizaYConservaLaAuditoria() {
         repo().guardar(Datos.producto("MAR-01", "25000", true, 10, 1));
         Producto c = repo().buscarPorCodigo("MAR-01").orElseThrow();
-        c.editar("Martillo nuevo", new BigDecimal("27000"), false, 2L, "admin2", Datos.AHORA.plusSeconds(600));
+        c.editar("Martillo nuevo", new BigDecimal("27000"), false, 2L, "PAQUETE", "admin2", Datos.AHORA.plusSeconds(600));
         c.descontar(4, "vendedor", Datos.AHORA.plusSeconds(900));
         c.desactivar("admin3", Datos.AHORA.plusSeconds(1200));
         repo().guardar(c);
@@ -49,6 +58,7 @@ public abstract class ProductoRepositoryContractTest {
         assertEquals(Dinero.de("27000"), r.getPrecioBase());
         assertFalse(r.isAplicaIva());
         assertEquals(2L, r.getProveedorId());
+        assertEquals(UnidadMedida.PAQUETE, r.getUnidadMedida());
         assertEquals(6, r.getStock());
         assertFalse(r.isActivo());
         assertEquals("admin", r.getAuditoria().creadoPor());
