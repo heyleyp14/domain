@@ -10,7 +10,7 @@ Documento base para crear las tarjetas en Trello. Se deriva de `docs/Acta_Planea
 - **Hecho:** la suite automatizada que cubre la tarjeta está en verde en esta copia.
 - **Etiqueta verde:** dominio y aplicación listos; en esta corrida también la infraestructura quedó validada.
 - **Etiqueta roja:** falta implementar o validar la tarjeta.
-- **Responsable y fecha:** `[completar]` en todas las tarjetas.
+- **Responsable y semana:** tomados del acta del grupo (06/11/2026).
 
 > La corrida es evidencia puntual de esta copia, no una validación en la máquina de cada integrante. Cada persona debe reproducirla con `JWT_SECRET_BASE64`.
 
@@ -48,9 +48,9 @@ Documento base para crear las tarjetas en Trello. Se deriva de `docs/Acta_Planea
 
 **Etiqueta:** verde
 
-**Responsable:** [completar]
+**Responsable:** Juan Bohórquez
 
-**Fecha:** [completar]
+**Fecha:** Ya entregado
 
 ---
 
@@ -71,9 +71,9 @@ Documento base para crear las tarjetas en Trello. Se deriva de `docs/Acta_Planea
 
 **Etiqueta:** verde
 
-**Responsable:** [completar]
+**Responsable:** Felipe Mantilla
 
-**Fecha:** [completar]
+**Fecha:** Semana 7
 
 ---
 
@@ -92,9 +92,9 @@ Documento base para crear las tarjetas en Trello. Se deriva de `docs/Acta_Planea
 
 **Etiqueta:** verde
 
-**Responsable:** [completar]
+**Responsable:** Jesús Leal
 
-**Fecha:** [completar]
+**Fecha:** Semana 7–8
 
 ---
 
@@ -112,9 +112,9 @@ Documento base para crear las tarjetas en Trello. Se deriva de `docs/Acta_Planea
 
 **Etiqueta:** verde
 
-**Responsable:** [completar]
+**Responsable:** Lisbeth Cordero
 
-**Fecha:** [completar]
+**Fecha:** Semana 8
 
 ---
 
@@ -134,9 +134,9 @@ Documento base para crear las tarjetas en Trello. Se deriva de `docs/Acta_Planea
 
 **Etiqueta:** verde
 
-**Responsable:** [completar]
+**Responsable:** Felipe Mantilla
 
-**Fecha:** [completar]
+**Fecha:** Semana 8
 
 ---
 
@@ -158,9 +158,9 @@ Documento base para crear las tarjetas en Trello. Se deriva de `docs/Acta_Planea
 
 **Etiqueta:** verde
 
-**Responsable:** [completar]
+**Responsable:** Jesús Leal
 
-**Fecha:** [completar]
+**Fecha:** Semana 7 (prioridad 1)
 
 ---
 
@@ -182,9 +182,9 @@ Documento base para crear las tarjetas en Trello. Se deriva de `docs/Acta_Planea
 
 **Etiqueta:** verde
 
-**Responsable:** [completar]
+**Responsable:** Heyley Parada
 
-**Fecha:** [completar]
+**Fecha:** Semana 8
 
 ---
 
@@ -205,9 +205,9 @@ Documento base para crear las tarjetas en Trello. Se deriva de `docs/Acta_Planea
 
 **Etiqueta:** verde
 
-**Responsable:** [completar]
+**Responsable:** Heyley Parada
 
-**Fecha:** [completar]
+**Fecha:** Semana 8–9
 
 ---
 
@@ -229,9 +229,9 @@ Documento base para crear las tarjetas en Trello. Se deriva de `docs/Acta_Planea
 
 **Etiqueta:** verde
 
-**Responsable:** [completar]
+**Responsable:** Lisbeth Cordero
 
-**Fecha:** [completar]
+**Fecha:** Semana 9+
 
 ---
 
@@ -252,9 +252,9 @@ Documento base para crear las tarjetas en Trello. Se deriva de `docs/Acta_Planea
 
 **Etiqueta:** verde
 
-**Responsable:** [completar]
+**Responsable:** Heyley Parada
 
-**Fecha:** [completar]
+**Fecha:** Por definir
 
 ---
 
@@ -264,5 +264,5 @@ Documento base para crear las tarjetas en Trello. Se deriva de `docs/Acta_Planea
 - HU-8 a HU-12, `FerreteriaRestTest` y `ConcurrenciaVentasTest` pasan a Hecho; las suites que la guía marcaba como "por correr" ya están en verde.
 - El ejercicio propio (unidad de medida en Producto) está implementado y probado; queda por validar en cada máquina y actualizar `matriz-pruebas.md`.
 - El riesgo del primer número de factura del año es una limitación conocida: `ConcurrenciaVentasTest` no lo cubre (usa el mismo producto). Decisión: se deja como mejora futura.
-- No se registran responsables, fechas ni enlaces: se dejan como `[completar]` para que el equipo los complete con datos reales.
+- Responsables y semanas provienen del acta del grupo (06/11/2026); el tablero está en el enlace de Trello indicado en esa acta.
 - La validación manual por integrante (token ADMIN, al menos tres operaciones USER y descarga de PDF) no está evidenciada aquí; queda pendiente aunque la automatización esté en verde.
